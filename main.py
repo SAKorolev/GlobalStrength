@@ -3,8 +3,30 @@
 
 def add_material():
     en_material_name = tk.Entry(frame_material)
-    en_material_name.insert(0, 'material ' + str(frame_material.grid_size()[1]))
-    en_material_name.grid(row=frame_material.grid_size()[1], column=0)
+    row_number = frame_material.grid_size()[1]
+    en_material_name.insert(0, 'material ' + str(row_number))
+    en_material_name.grid(row=row_number, column=0)
+
+    material = ('metall', 'FRP')
+    cb_material = ttk.Combobox(frame_material, values=material)
+    cb_material.current(1)
+    cb_material.grid(row=row_number, column=1)
+
+    en_material_E = tk.Entry(frame_material)
+    en_material_E.insert(0, '0.00')
+    en_material_E.grid(row=row_number, column=2)
+
+    en_material_sig_limit = tk.Entry(frame_material)
+    en_material_sig_limit.insert(0, '0.00')
+    en_material_sig_limit.grid(row=row_number, column=3)
+
+    en_material_tau_limit = tk.Entry(frame_material)
+    en_material_tau_limit.insert(0, '0.00')
+    en_material_tau_limit.grid(row=row_number, column=4)
+
+    en_material_thickness = tk.Entry(frame_material)
+    en_material_thickness.insert(0, '0.00')
+    en_material_thickness.grid(row=row_number, column=5)
 
 # ['Name', 'Material', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
 
@@ -16,6 +38,7 @@ def del_material():
         for widget1 in children:
             if int(widget1.grid_info()['row']) == i:
                 widget1.destroy()
+    if en_material_name
 
 
 
@@ -56,15 +79,17 @@ if __name__ == '__main__':
     canvas_material.pack(side="top", fill="both", expand=True)
     canvas_material.create_window((1, 1), window=frame_material, anchor="nw")
     frame_material.bind("<Configure>", lambda event: canvas_material.configure(scrollregion=canvas_material.bbox("all")))
-        # buttons on materials sheet
+        # buttons and title on materials sheet
     button_config = {'relief': 'solid', 'bd': 0, 'bg': '#DBDBDB', 'width': 3, 'pady': 4}
     tk.Button(frame_material_button, text='Add', **button_config, command=add_material).grid(row=0, column=0,
                                                                                                   padx=5, pady=5)
     tk.Button(frame_material_button, text='Del', **button_config, command=del_material).grid(row=0, column=1,
                                                                                                   padx=5, pady=5)
+
     title_material = ['Name', 'Material', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
     for title in title_material:
         tk.Label(frame_material, text=title).grid(row=0, column=title_material.index(title))
+    en_material = {}
 
 
     root.mainloop()
