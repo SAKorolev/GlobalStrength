@@ -9,7 +9,15 @@ def add_material():
 # ['Name', 'Material', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
 
 def del_material():
-    pass
+    children = frame_material.winfo_children()
+    widget = frame_material.focus_get()
+    if widget in children:
+        i = widget.grid_info()['row']
+        for widget1 in children:
+            if int(widget1.grid_info()['row']) == i:
+                widget1.destroy()
+
+
 
 
 if __name__ == '__main__':
