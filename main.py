@@ -20,7 +20,6 @@ def add_material():
                 en_material[row_number][title].insert(0, '0.00')
                 en_material[row_number][title].grid(row=row_number, column=title_material.index(title))
 
-# ['Name', 'Material', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
 
 def del_material():
     children = frame_material.winfo_children()
@@ -84,16 +83,14 @@ def add_elements():
                 en_elements[row_number][title].insert(0, 'element ' + str(row_number))
                 en_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
             case _:
-                en_elements[row_number][title] = tk.Entry(frame_elements)
+                en_elements[row_number][title] = tk.Entry(frame_elements, width=10)
                 en_elements[row_number][title].insert(0, '0.00')
                 en_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
 
 
-# ['Name', 'Material', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
-
-
 def del_elements():
     pass
+
 
 if __name__ == '__main__':
 
@@ -226,6 +223,7 @@ if __name__ == '__main__':
     # sheet global strength
     frame_elements_button = tk.Frame(sheet_elements)
     frame_elements_button.pack(side="top", fill='both')
+
     canvas_elements = tk.Canvas(sheet_elements, borderwidth=0)
     frame_elements = tk.Frame(canvas_elements)
     scroll_elements_vertical = tk.Scrollbar(sheet_elements, orient="vertical", command=canvas_elements.yview)
@@ -235,13 +233,17 @@ if __name__ == '__main__':
     canvas_elements.create_window((1, 1), window=frame_elements, anchor="nw")
     frame_elements.bind("<Configure>",
                         lambda event: canvas_elements.configure(scrollregion=canvas_elements.bbox("all")))
+
+    canvas_picture = tk.Canvas(sheet_elements, borderwidth=1)
+    canvas_picture.pack(side="top", fill="both", expand=True)
+    canvas_picture.create_line(0,0,500,200, fill='green', width=3)
     # buttons and title on strength sheet
     tk.Button(frame_elements_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
                                                                                              padx=5, pady=5)
     tk.Button(frame_elements_button, text='Del', **button_config, command=del_elements).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
 
-    title_elements = ['Material', 'Name', 'b, mm', 'h, mm', 'Qty', 'z, mm', 'E, MPa',
+    title_elements = ['Material', 'Name', 'Angle, deg',  'b, mm', 'h, mm', 'Qty', 'z, mm', 'E, MPa',
                       'F, mm2', 'Fz, mm3', 'Fz2, mm4', 'bh3/12, mm4', 'zna, mm', 'Sig, MPa']
     for title in title_elements:
         tk.Label(frame_elements, width=10, text=title).grid(row=0, column=title_elements.index(title))
