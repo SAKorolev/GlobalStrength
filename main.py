@@ -61,19 +61,45 @@ def update_listbox_materials(e):
 
 
 def add_laminate():
-    pass
+    lam['laminate ' + str(lb_lam1.index(tk.END))] = {}
+    lb_lam1.insert(tk.END, 'laminate ' + str(lb_lam1.index(tk.END)))
+    en_laminate_name.delete(0, tk.END)
+    en_laminate_name.insert(0, lb_lam1.get(tk.END))
+    tree_laminate.delete(*tree_laminate.get_children())
+    print(lam)
 
 
 def del_laminate():
-    pass
+    if lb_lam1.curselection():
+        i = lb_lam1.curselection()[0]
+        del lam[lb_lam1.get(i)]
+        lb_lam1.delete(i)
+    print(lam)
 
 
-def add_layer_in_laminate():
-    pass
+def add_layer_in_laminate(e = None):
+    if lb_lam2.curselection() and lb_lam1.get(0):
+        i = lb_lam2.curselection()[0]
+        tree_laminate.insert("", index='end', values=(lb_lam2.get(i), mat[lb_lam2.get(i)]['Thickness, mm']))
+        lam[en_laminate_name.get()] = {}
+        i = 0
+        for child in tree_laminate.get_children():
+            lam[en_laminate_name.get()][i] = tree_laminate.item(child)['values'][0]
+            i += 1
+    print(lam)
 
 
-def select_laminate():
-    pass
+def select_laminate(e):
+    if lb_lam1.curselection():
+        i = lb_lam1.curselection()[0]
+        if root.focus_get() == en_laminate_name:
+            en_laminate_name.event_generate('<FocusOut>', when='now')
+        en_laminate_name.delete(0, tk.END)
+        en_laminate_name.insert(0, lb_lam1.get(i))
+        tree_laminate.delete(*tree_laminate.get_children())
+        for i in lam[lb_lam1.get(i)]:
+            tree_laminate.insert("", index='end',
+                        values=(lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]]['Thickness, mm']))
 
 
 def current_name_laminate():
@@ -85,15 +111,38 @@ def change_laminate_name():
 
 
 def del_layer_in_laminate():
-    pass
+    if tree_laminate.selection():
+        tree_laminate.delete(tree_laminate.selection()[0])
+        lam[en_laminate_name.get()] = {}
+        i = 0
+        for child in tree_laminate.get_children():
+            lam[en_laminate_name.get()][i] = tree_laminate.item(child)['values'][0]
+            i += 1
+    print(lam)
 
 
 def up_layer_in_laminate():
-    pass
+    if tree_laminate.selection():
+        row = tree_laminate.selection()
+        tree_laminate.move(row[0], tree_laminate.parent(row[0]), tree_laminate.index(row[0]) - 1)
+        lam[en_laminate_name.get()] = {}
+        i = 0
+        for child in tree_laminate.get_children():
+            lam[en_laminate_name.get()][i] = tree_laminate.item(child)['values'][0]
+            i += 1
+    print(lam)
 
 
 def down_layer_in_laminate():
-    pass
+    if tree_laminate.selection():
+        row = tree_laminate.selection()
+        tree_laminate.move(row[0], tree_laminate.parent(row[0]), tree_laminate.index(row[0]) + 1)
+        lam[en_laminate_name.get()] = {}
+        i = 0
+        for child in tree_laminate.get_children():
+            lam[en_laminate_name.get()][i] = tree_laminate.item(child)['values'][0]
+            i += 1
+    print(lam)
 
 
 def add_elements():
@@ -128,6 +177,7 @@ if __name__ == '__main__':
     material = 'Material'
     title_material = ['Material', 'Name', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
     wd_material = {}
+    lam = {}
     mat = {}
 
     root = tk.Tk()
