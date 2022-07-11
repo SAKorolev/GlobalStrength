@@ -1,24 +1,39 @@
 
 
-
 def add_material():
     row_number = frame_material.grid_size()[1]
-    en_material[row_number] = {}
+    add_material_widgets(row_number)
+    add_material_dict(row_number)
+    print(mat)
+
+
+def add_material_widgets(row_number):
+    wd_material[row_number] = {}
     for title in title_material:
         match title:
             case 'Material':
                 tuple_material = ('Metal', 'FRP')
-                cb_material = ttk.Combobox(frame_material, values=tuple_material)
-                cb_material.current(1)
-                cb_material.grid(row=row_number, column=0)
+                wd_material[row_number][title] = ttk.Combobox(frame_material, values=tuple_material)
+                wd_material[row_number][title].current(1)
+                wd_material[row_number][title].grid(row=row_number, column=0)
+                wd_material[row_number][title].bind('<<ComboboxSelected>>',
+                                                    lambda e, i=row_number, t=title: change_material_dict(e, i, t))
             case 'Name':
-                en_material[row_number][title] = tk.Entry(frame_material)
-                en_material[row_number][title].insert(0, 'material ' + str(row_number))
-                en_material[row_number][title].grid(row=row_number, column=title_material.index(title))
+                wd_material[row_number][title] = tk.Entry(frame_material)
+                wd_material[row_number][title].insert(0, 'material ' + str(row_number))
+                wd_material[row_number][title].grid(row=row_number, column=title_material.index(title))
             case _:
-                en_material[row_number][title] = tk.Entry(frame_material)
-                en_material[row_number][title].insert(0, '0.00')
-                en_material[row_number][title].grid(row=row_number, column=title_material.index(title))
+                wd_material[row_number][title] = tk.Entry(frame_material)
+                wd_material[row_number][title].insert(0, '0.00')
+                wd_material[row_number][title].grid(row=row_number, column=title_material.index(title))
+                wd_material[row_number][title].bind('<FocusOut>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+                wd_material[row_number][title].bind('<Return>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+
+
+def add_material_dict(row_number):
+    mat[wd_material[row_number][name].get()] = {}
+    for title in title_material:
+        mat[wd_material[row_number][name].get()][title] = wd_material[row_number][title].get()
 
 
 def del_material():
@@ -26,11 +41,23 @@ def del_material():
     widget = frame_material.focus_get()
     if widget in children:
         i = widget.grid_info()['row']
+        del mat[wd_material[i][name].get()]
+        del wd_material[i]
         for widget1 in children:
             if int(widget1.grid_info()['row']) == i:
                 widget1.destroy()
-    # if frame_material.grid_size()[1] > 0:
-    #     en_material[frame_material.grid_size()[1]][name].focus_set()
+    print(mat)
+
+
+def change_material_dict(e, i, t):
+    mat[wd_material[i][name].get()][t] = wd_material[i][t].get()
+    print(mat)
+
+
+def update_listbox_materials(e):
+    lb_lam2.delete(0, tk.END)
+    for key in mat:
+        lb_lam2.insert(tk.END, key)
 
 
 def add_laminate():
@@ -98,7 +125,10 @@ if __name__ == '__main__':
     import tkinter.ttk as ttk
 
     name = 'Name'
-    # material = 'Material'
+    material = 'Material'
+    title_material = ['Material', 'Name', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
+    wd_material = {}
+    mat = {}
 
     root = tk.Tk()
     root.rowconfigure(0, weight=1)
@@ -120,6 +150,7 @@ if __name__ == '__main__':
     sheet_elements = ttk.Frame(sheet)
     sheet.add(sheet_elements,text='Global strength')
     sheet.grid(row=0, column=0, sticky='snwe')
+    sheet.bind('<<NotebookTabChanged>>', update_listbox_materials)
     # sheet materials
     frame_material_button = tk.Frame(sheet_material)
     frame_material_button.pack(side="top", fill='both')
@@ -137,11 +168,8 @@ if __name__ == '__main__':
                                                                                                   padx=5, pady=5)
     tk.Button(frame_material_button, text='Del', **button_config, command=del_material).grid(row=0, column=1,
                                                                                                   padx=5, pady=5)
-
-    title_material = ['Material', 'Name', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
     for title in title_material:
         tk.Label(frame_material, text=title).grid(row=0, column=title_material.index(title))
-    en_material = {}
 
     # sheet laminate
     sheet_laminate.rowconfigure(1, weight=1)
