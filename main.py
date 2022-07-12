@@ -1,5 +1,30 @@
 
 
+def show_about():
+    mb.showinfo('GlobalStrength', 'Developed by ANMC, 2022 - V1.01.')
+
+
+def show_ask_exit():
+    ask = mb.askyesnocancel('Quit', 'Do you want to save data?')
+    if ask:
+        save_project()
+    elif ask is False:
+        root.destroy()
+
+
+def new_project():
+    pass
+
+
+def open_project():
+    pass
+
+
+def save_project():
+    pass
+
+
+
 def add_material():
     row_number = frame_material.grid_size()[1]
     add_material_widgets(row_number)
@@ -12,8 +37,7 @@ def add_material_widgets(row_number):
     for title in title_material:
         match title:
             case 'Material':
-                tuple_material = ('Metal', 'FRP')
-                wd_material[row_number][title] = ttk.Combobox(frame_material, values=tuple_material)
+                wd_material[row_number][title] = ttk.Combobox(frame_material, values=list_material)
                 wd_material[row_number][title].current(1)
                 wd_material[row_number][title].grid(row=row_number, column=0)
                 wd_material[row_number][title].bind('<<ComboboxSelected>>',
@@ -56,8 +80,16 @@ def change_material_dict(e, i, t):
 
 def update_listbox_materials(e):
     lb_lam2.delete(0, tk.END)
+    list_material_str.clear()
     for key in mat:
-        lb_lam2.insert(tk.END, key)
+        if mat[key][material] == list_material[1]:
+            lb_lam2.insert(tk.END, key)
+        else:
+            list_material_str.append(key)
+    for key in lam:
+        list_material_str.append(key)
+    for key in wd_elements:
+        wd_elements[key][material].configure(value=list_material_str)
 
 
 def add_laminate():
@@ -99,7 +131,7 @@ def select_laminate(e):
         tree_laminate.delete(*tree_laminate.get_children())
         for i in lam[lb_lam1.get(i)]:
             tree_laminate.insert("", index='end',
-                        values=(lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]]['Thickness, mm']))
+                        values=(lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]][thickness]))
 
 
 def current_name_laminate():
@@ -145,38 +177,136 @@ def down_layer_in_laminate():
     print(lam)
 
 
+def calc_thickness_lam(lam_name):
+    lam_thickness = 0
+    for ply in lam[lam_name]:
+        lam_thickness += float(mat[lam[lam_name][ply]][thickness])
+    return lam_thickness
+
+def calc_E_lam(lam_name):
+    lam_thickness = 0
+    lam_Ethickness = 0
+    for ply in lam[lam_name]:
+        lam_thickness += float(mat[lam[lam_name][ply]][thickness])
+        lam_Ethickness += float(mat[lam[lam_name][ply]][thickness])*float(mat[lam[lam_name][ply]][mod_e])
+    return (lam_Ethickness/lam_thickness)
+
+
 def add_elements():
     row_number = frame_elements.grid_size()[1]
-    en_elements[row_number] = {}
+    wd_elements[row_number] = {}
     for title in title_elements:
-        match title:
-            case 'Material':
-                cb_elements = ttk.Combobox(frame_elements)#, values=tuple_material)
-                # cb_elements.current(1)
-                cb_elements.grid(row=row_number, column=0)
-            case 'Name':
-                en_elements[row_number][title] = tk.Entry(frame_elements)
-                en_elements[row_number][title].insert(0, 'element ' + str(row_number))
-                en_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
-            case _:
-                en_elements[row_number][title] = tk.Entry(frame_elements, width=10)
-                en_elements[row_number][title].insert(0, '0.00')
-                en_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+        if title == material:
+            wd_elements[row_number][title] = ttk.Combobox(frame_elements, values=list_material_str)
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title].bind('<<ComboboxSelected>>',
+                                                    lambda e, i=row_number, t=title: change_material_str(e, i, t))
+        elif title == orientation:
+            wd_elements[row_number][title] = ttk.Combobox(frame_elements, values=orientation_element)
+            wd_elements[row_number][title].current(0)
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title].bind('<<ComboboxSelected>>',
+                                                lambda e, i=row_number: change_orientation_str(e, i))
+        elif title == name:
+            wd_elements[row_number][title] = tk.Entry(frame_elements)
+            wd_elements[row_number][title].insert(0, 'element ' + str(row_number))
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+        else:
+            wd_elements[row_number][title] = tk.Entry(frame_elements, width=10)
+            wd_elements[row_number][title].insert(0, 0)
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+
+    wd_elements[row_number][qty].delete(0, tk.END)
+    wd_elements[row_number][qty].insert(0, 1)
 
 
 def del_elements():
     pass
 
 
-if __name__ == '__main__':
+def change_material_str(e, i, t):
+    elem_name = wd_elements[i][t].get()
+    if elem_name in mat:
+        wd_elements[i][mod_e].delete(0, tk.END)
+        wd_elements[i][mod_e].insert(0, mat[elem_name][mod_e])
+    else:
+        wd_elements[i][mod_e].delete(0, tk.END)
+        wd_elements[i][mod_e].insert(0, calc_E_lam(elem_name))
+        if wd_elements[i][orientation].get() == orientation_element[0]:
+            wd_elements[i][height].delete(0, tk.END)
+            wd_elements[i][height].insert(0, calc_thickness_lam(elem_name))
+        else:
+            wd_elements[i][breadth].delete(0, tk.END)
+            wd_elements[i][breadth].insert(0, calc_thickness_lam(elem_name))
 
+
+def change_orientation_str(e, i):
+    elem_breadth = wd_elements[i][breadth].get()
+    elem_height = wd_elements[i][height].get()
+    wd_elements[i][breadth].delete(0, tk.END)
+    wd_elements[i][breadth].insert(0, elem_height)
+    wd_elements[i][height].delete(0, tk.END)
+    wd_elements[i][height].insert(0, elem_breadth)
+
+
+def calc_total_F():
+    area = 0
+    for key in wd_elements:
+        area += wd_elements[key][height] * wd_elements[key][breadth]
+        return area
+
+
+def calc_total_FZ():
+    total_fz = 0
+    for key in wd_elements:
+        total_fz += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]
+        return total_fz
+
+
+def calc_total_FZ2_BH3():
+    total_fz2_bh3 = 0
+    for key in wd_elements:
+        total_fz2_bh3 += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]**2 + \
+                         wd_elements[key][breadth] * wd_elements[key][height] ** 3 /12
+        return total_fz2_bh3
+
+
+def calculate():
+    pass
+
+
+def export_results():
+    pass
+
+
+def export_materials():
+    pass
+
+
+
+if __name__ == '__main__':
+    import tkinter.filedialog as fd
+    import tkinter.messagebox as mb
     import tkinter as tk
     import tkinter.ttk as ttk
 
     name = 'Name'
     material = 'Material'
-    title_material = ['Material', 'Name', 'E, MPa', 'Sig, MPa', 'Tau, MPa', 'Thickness, mm']
+    thickness = 'Thickness, mm'
+    mod_e = 'E, MPa'
+    orientation = 'Orientation'
+    qty  = 'Qty'
+    breadth = 'b, mm'
+    height = 'h, mm'
+    dist_z = 'z, mm'
+    title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
+    title_elements = [name, material, orientation, breadth, height, qty, dist_z, mod_e,
+                      'F, mm2', 'Fz, mm3', 'Fz2, mm4', 'bh3/12, mm4', 'zna, mm', 'Sig, MPa']
+    list_material = ['Metal', 'FRP']
+    list_material_str = []
+    orientation_element = ['horizontal', 'vertical']
     wd_material = {}
+    wd_elements = {}
     lam = {}
     mat = {}
 
@@ -184,6 +314,23 @@ if __name__ == '__main__':
     root.rowconfigure(0, weight=1)
     root.columnconfigure(0, weight=1)
     root.title('GlobalStrength')
+
+    main_menu = tk.Menu(root)
+    root.config(menu=main_menu)
+    file_menu = tk.Menu(main_menu, tearoff=0)
+    result_menu = tk.Menu(main_menu, tearoff=0)
+    file_menu.add_command(label="New project", command=new_project)
+    file_menu.add_separator()
+    file_menu.add_command(label="Open project", command=open_project)
+    file_menu.add_command(label="Save project", command=save_project)
+    file_menu.add_separator()
+    result_menu.add_command(label='Export calculation to Excel', command=export_results)
+    result_menu.add_command(label='Export materials data to Excel', command=export_materials)
+    file_menu.add_command(label="Exit", command=show_ask_exit)
+    main_menu.add_cascade(label="File", menu=file_menu)
+    main_menu.add_command(label='Calculate', command=calculate)
+    main_menu.add_cascade(label='Export result', menu=result_menu)
+    main_menu.add_command(label='About...', command=show_about)
 
     frame_main = tk.Frame()
     frame_main.rowconfigure(0, weight=1)
@@ -320,9 +467,6 @@ if __name__ == '__main__':
                                                                                              padx=5, pady=5)
     tk.Button(frame_elements_button, text='Del', **button_config, command=del_elements).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
-
-    title_elements = ['Material', 'Name', 'Angle, deg',  'b, mm', 'h, mm', 'Qty', 'z, mm', 'E, MPa',
-                      'F, mm2', 'Fz, mm3', 'Fz2, mm4', 'bh3/12, mm4', 'zna, mm', 'Sig, MPa']
     for title in title_elements:
         tk.Label(frame_elements, width=10, text=title).grid(row=0, column=title_elements.index(title))
     en_elements = {}
