@@ -7,22 +7,103 @@ def show_about():
 def show_ask_exit():
     ask = mb.askyesnocancel('Quit', 'Do you want to save data?')
     if ask:
-        save_project()
+        save_file()
     elif ask is False:
         root.destroy()
 
 
 def new_project():
-    pass
+    general.clear()
+    mat.clear()
+    lam.clear()
+    elements.clear()
+    wd_material.clear()
+    wd_elements.clear()
+    en_moment.delete(0, tk.END)
+    en_moment.insert(0, 0)
+    children = frame_material.winfo_children()
+    for child in children:
+        child.destroy()
+    for title in title_material:
+        tk.Label(frame_material, text=title).grid(row=0, column=title_material.index(title))
+    children = frame_elements.winfo_children()
+    for child in children:
+        child.destroy()
+    for title in title_elements:
+        tk.Label(frame_elements, text=title).grid(row=0, column=title_elements.index(title))
+    lb_lam1.delete(0, tk.END)
+    lb_lam2.delete(0, tk.END)
+    tree_laminate.delete(*tree_laminate.get_children())
 
 
-def open_project():
-    pass
+def open_file():
+    file_types = (("Project file", "*.json"),
+                 ("Any", "*"))
+    file_name = fd.askopenfilename(title="Open file", initialdir="/", filetypes=file_types)
+    if file_name:
+        new_project()
+        with open(file_name, 'r') as file:
+            input_data = json.load(file)
+        open_project(input_data)
 
 
-def save_project():
-    pass
+def open_project(input_data):
+    # general
+    en_moment.delete(0, tk.END)
+    en_moment.insert(0, input_data['general'][moment])
+    # materials
+    mat.clear()
+    for key in input_data['material']:
+        row_number = frame_material.grid_size()[1]
+        add_material_widgets(row_number)
+        mat[key] = {}
+        for title in title_material:
+            mat[key][title] = input_data['material'][key][title]
+            if title == material:
+                wd_material[row_number][title].set(mat[key][title])
+            else:
+                wd_material[row_number][title].delete(0, tk.END)
+                wd_material[row_number][title].insert(0, mat[key][title])
+    # laminate
+    lam.clear()
+    for key in input_data['laminates']:
+        lb_lam1.insert(tk.END, key)
+        lam[key] = {}
+        for position in input_data['laminates'][key]:
+            lam[key][position] = input_data['laminates'][key][position]
 
+    # elements
+    for key in input_data['elements']:
+        row_number = frame_elements.grid_size()[1]
+        add_elements()
+        for title in title_elements:
+            if title == material or title == orientation:
+                wd_elements[row_number][title].set(input_data['elements'][key][title])
+            else:
+                wd_elements[row_number][title].delete(0, tk.END)
+                wd_elements[row_number][title].insert(0, input_data['elements'][key][title])
+
+
+def save_file():
+    file_types = (("Project file", "*.json"),
+                 ("Any", "*"))
+    file_name = fd.asksaveasfilename(title="Save file", initialdir="/", filetypes=file_types)
+
+    output_data = dict()
+
+    create_general_dict()
+    output_data['general'] = general
+    output_data['material'] = mat
+    output_data['laminates'] = lam
+    create_elements_dict()
+    output_data['elements'] = elements
+
+    dict_json = json.dumps(output_data)
+    try:
+        with open(file_name, "w") as file:
+            file.write(dict_json)
+    except FileNotFoundError:
+        pass
 
 
 def add_material():
@@ -249,30 +330,75 @@ def change_orientation_str(e, i):
     wd_elements[i][height].insert(0, elem_breadth)
 
 
-def calc_total_F():
-    area = 0
+def calc_sum_column_elements(title):
+    sum_elements = 0
+    for key in elements:
+        sum_elements += float(elements[key][title])
+    return sum_elements
+
+
+# def calc_total_FZ():
+#     total_fz = 0
+#     for key in wd_elements:
+#         total_fz += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]
+#         return total_fz
+#
+#
+# def calc_total_FZ2_BH3():
+#     total_fz2_bh3 = 0
+#     for key in wd_elements:
+#         total_fz2_bh3 += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]**2 + \
+#                          wd_elements[key][breadth] * wd_elements[key][height] ** 3 /12
+#         return total_fz2_bh3
+
+
+def create_elements_dict():
+    elements.clear()
     for key in wd_elements:
-        area += wd_elements[key][height] * wd_elements[key][breadth]
-        return area
+        elem_name = wd_elements[key][name].get()
+        elements[elem_name] = {}
+        for title in wd_elements[key]:
+            elements[elem_name][title] = wd_elements[key][title].get()
 
 
-def calc_total_FZ():
-    total_fz = 0
-    for key in wd_elements:
-        total_fz += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]
-        return total_fz
-
-
-def calc_total_FZ2_BH3():
-    total_fz2_bh3 = 0
-    for key in wd_elements:
-        total_fz2_bh3 += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]**2 + \
-                         wd_elements[key][breadth] * wd_elements[key][height] ** 3 /12
-        return total_fz2_bh3
+def create_general_dict():
+    general.clear()
+    general[moment] = en_moment.get()
 
 
 def calculate():
-    pass
+    create_elements_dict()
+    create_general_dict()
+    for elem_name in elements:
+        elements[elem_name][area_f] = float(elements[elem_name][breadth]) * float(elements[elem_name][height])
+        elements[elem_name][ef] = float(elements[elem_name][area_f]) * float(elements[elem_name][mod_e])
+        elements[elem_name][efz] = float(elements[elem_name][ef]) * float(elements[elem_name][dist_z])
+        elements[elem_name][efz2] = float(elements[elem_name][efz]) * float(elements[elem_name][dist_z])
+        elements[elem_name][ebh3] = float(elements[elem_name][mod_e]) * \
+                                    float(elements[elem_name][breadth]) * float(elements[elem_name][height])**3 / 12
+    zna = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
+    ei_na = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - zna **2 * calc_sum_column_elements(ef)
+    for key in wd_elements:
+        elem_name = wd_elements[key][name].get()
+        elements[elem_name][dist_zna] = float(elements[elem_name][dist_z]) - zna
+        elements[elem_name][sig_act] = float(general[moment]) / ei_na * elements[elem_name][dist_zna] * float(elements[elem_name][mod_e])
+    show_result()
+    print(calc_sum_column_elements(efz2))
+    print(calc_sum_column_elements(ebh3))
+    print(calc_sum_column_elements(ef))
+    print(zna, ei_na)
+
+
+def show_result():
+    for key in wd_elements:
+        elem_name = wd_elements[key][name].get()
+        for title in title_elements:
+            if title == material or title == orientation:
+                wd_elements[key][title].set(elements[elem_name][title])
+            else:
+                wd_elements[key][title].delete(0, tk.END)
+                wd_elements[key][title].insert(0, elements[elem_name][title])
+
 
 
 def export_results():
@@ -283,12 +409,12 @@ def export_materials():
     pass
 
 
-
 if __name__ == '__main__':
     import tkinter.filedialog as fd
     import tkinter.messagebox as mb
     import tkinter as tk
     import tkinter.ttk as ttk
+    import json
 
     name = 'Name'
     material = 'Material'
@@ -299,16 +425,26 @@ if __name__ == '__main__':
     breadth = 'b, mm'
     height = 'h, mm'
     dist_z = 'z, mm'
+    area_f = 'F, mm2'
+    ef = 'EF, N'
+    efz = 'EFz, Nmm'
+    efz2 = 'EFz2, Nmm2'
+    ebh3 = 'Eh3/12, Nmm2'
+    dist_zna = 'zna, mm'
+    sig_act = 'Sig, MPa'
+    moment = 'Bending moment'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
     title_elements = [name, material, orientation, breadth, height, qty, dist_z, mod_e,
-                      'F, mm2', 'Fz, mm3', 'Fz2, mm4', 'bh3/12, mm4', 'zna, mm', 'Sig, MPa']
+                      area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
     list_material = ['Metal', 'FRP']
     list_material_str = []
     orientation_element = ['horizontal', 'vertical']
     wd_material = {}
     wd_elements = {}
+    general = {}
     lam = {}
     mat = {}
+    elements = {}
 
     root = tk.Tk()
     root.rowconfigure(0, weight=1)
@@ -321,8 +457,8 @@ if __name__ == '__main__':
     result_menu = tk.Menu(main_menu, tearoff=0)
     file_menu.add_command(label="New project", command=new_project)
     file_menu.add_separator()
-    file_menu.add_command(label="Open project", command=open_project)
-    file_menu.add_command(label="Save project", command=save_project)
+    file_menu.add_command(label="Open project", command=open_file)
+    file_menu.add_command(label="Save project", command=save_file)
     file_menu.add_separator()
     result_menu.add_command(label='Export calculation to Excel', command=export_results)
     result_menu.add_command(label='Export materials data to Excel', command=export_materials)
@@ -348,6 +484,13 @@ if __name__ == '__main__':
     sheet.add(sheet_elements,text='Global strength')
     sheet.grid(row=0, column=0, sticky='snwe')
     sheet.bind('<<NotebookTabChanged>>', update_listbox_materials)
+    # sheet general
+    frame_general = tk.Frame(sheet_general)
+    frame_general.grid(row=0, column=0, sticky='nsew')
+    lb_moment = tk.Label(frame_general, text='Bending mement, Nmm')
+    lb_moment.grid(row=0, column=0)
+    en_moment = tk.Entry(frame_general)
+    en_moment.grid(row=0, column=1)
     # sheet materials
     frame_material_button = tk.Frame(sheet_material)
     frame_material_button.pack(side="top", fill='both')
