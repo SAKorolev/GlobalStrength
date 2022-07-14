@@ -96,6 +96,7 @@ def save_file():
     output_data['material'] = mat
     output_data['laminates'] = lam
     create_elements_dict()
+    clear_result_element_dict()
     output_data['elements'] = elements
 
     dict_json = json.dumps(output_data)
@@ -116,23 +117,22 @@ def add_material():
 def add_material_widgets(row_number):
     wd_material[row_number] = {}
     for title in title_material:
-        match title:
-            case 'Material':
-                wd_material[row_number][title] = ttk.Combobox(frame_material, values=list_material)
-                wd_material[row_number][title].current(1)
-                wd_material[row_number][title].grid(row=row_number, column=0)
-                wd_material[row_number][title].bind('<<ComboboxSelected>>',
-                                                    lambda e, i=row_number, t=title: change_material_dict(e, i, t))
-            case 'Name':
-                wd_material[row_number][title] = tk.Entry(frame_material)
-                wd_material[row_number][title].insert(0, 'material ' + str(row_number))
-                wd_material[row_number][title].grid(row=row_number, column=title_material.index(title))
-            case _:
-                wd_material[row_number][title] = tk.Entry(frame_material)
-                wd_material[row_number][title].insert(0, '0.00')
-                wd_material[row_number][title].grid(row=row_number, column=title_material.index(title))
-                wd_material[row_number][title].bind('<FocusOut>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
-                wd_material[row_number][title].bind('<Return>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+        if title == material:
+            wd_material[row_number][title] = ttk.Combobox(frame_material, width=15, values=list_material)
+            wd_material[row_number][title].current(1)
+            wd_material[row_number][title].grid(row=row_number, column=0)
+            wd_material[row_number][title].bind('<<ComboboxSelected>>',
+                                                lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+        elif title == name:
+            wd_material[row_number][title] = tk.Entry(frame_material, width=15)
+            wd_material[row_number][title].insert(0, 'material ' + str(row_number))
+            wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
+        else:
+            wd_material[row_number][title] = tk.Entry(frame_material, width=15)
+            wd_material[row_number][title].insert(0, '0.00')
+            wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
+            wd_material[row_number][title].bind('<FocusOut>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+            wd_material[row_number][title].bind('<Return>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
 
 
 def add_material_dict(row_number):
@@ -278,24 +278,24 @@ def add_elements():
     wd_elements[row_number] = {}
     for title in title_elements:
         if title == material:
-            wd_elements[row_number][title] = ttk.Combobox(frame_elements, values=list_material_str)
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_material_str)
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
             wd_elements[row_number][title].bind('<<ComboboxSelected>>',
                                                     lambda e, i=row_number, t=title: change_material_str(e, i, t))
         elif title == orientation:
-            wd_elements[row_number][title] = ttk.Combobox(frame_elements, values=orientation_element)
+            wd_elements[row_number][title] = ttk.Combobox(frame_elements, width=10, values=orientation_element)
             wd_elements[row_number][title].current(0)
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
             wd_elements[row_number][title].bind('<<ComboboxSelected>>',
                                                 lambda e, i=row_number: change_orientation_str(e, i))
         elif title == name:
-            wd_elements[row_number][title] = tk.Entry(frame_elements)
+            wd_elements[row_number][title] = tk.Entry(frame_elements, width=12)
             wd_elements[row_number][title].insert(0, 'element ' + str(row_number))
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
         else:
-            wd_elements[row_number][title] = tk.Entry(frame_elements, width=10)
+            wd_elements[row_number][title] = tk.Entry(frame_elements, width=12)
             wd_elements[row_number][title].insert(0, 0)
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title))
+            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
 
     wd_elements[row_number][qty].delete(0, tk.END)
     wd_elements[row_number][qty].insert(0, 1)
@@ -337,19 +337,10 @@ def calc_sum_column_elements(title):
     return sum_elements
 
 
-# def calc_total_FZ():
-#     total_fz = 0
-#     for key in wd_elements:
-#         total_fz += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]
-#         return total_fz
-#
-#
-# def calc_total_FZ2_BH3():
-#     total_fz2_bh3 = 0
-#     for key in wd_elements:
-#         total_fz2_bh3 += wd_elements[key][height] * wd_elements[key][breadth] * wd_elements[key][dist_z]**2 + \
-#                          wd_elements[key][breadth] * wd_elements[key][height] ** 3 /12
-#         return total_fz2_bh3
+def clear_result_element_dict():
+    for elem_name in elements:
+        for title in result:
+            elements[elem_name][title] = 0
 
 
 def create_elements_dict():
@@ -358,30 +349,33 @@ def create_elements_dict():
         elem_name = wd_elements[key][name].get()
         elements[elem_name] = {}
         for title in wd_elements[key]:
-            elements[elem_name][title] = wd_elements[key][title].get()
+            if is_digit(wd_elements[key][title].get()):
+                elements[elem_name][title] = float(wd_elements[key][title].get())
+            else:
+                elements[elem_name][title] = wd_elements[key][title].get()
 
 
 def create_general_dict():
     general.clear()
-    general[moment] = en_moment.get()
+    general[moment] = float(en_moment.get())
 
 
 def calculate():
     create_elements_dict()
     create_general_dict()
     for elem_name in elements:
-        elements[elem_name][area_f] = float(elements[elem_name][breadth]) * float(elements[elem_name][height])
-        elements[elem_name][ef] = float(elements[elem_name][area_f]) * float(elements[elem_name][mod_e])
-        elements[elem_name][efz] = float(elements[elem_name][ef]) * float(elements[elem_name][dist_z])
-        elements[elem_name][efz2] = float(elements[elem_name][efz]) * float(elements[elem_name][dist_z])
-        elements[elem_name][ebh3] = float(elements[elem_name][mod_e]) * \
-                                    float(elements[elem_name][breadth]) * float(elements[elem_name][height])**3 / 12
+        elements[elem_name][area_f] = elements[elem_name][breadth] * elements[elem_name][height]
+        elements[elem_name][ef] = elements[elem_name][area_f] * elements[elem_name][mod_e]
+        elements[elem_name][efz] = elements[elem_name][ef] * elements[elem_name][dist_z]
+        elements[elem_name][efz2] = elements[elem_name][efz] * elements[elem_name][dist_z]
+        elements[elem_name][ebh3] = elements[elem_name][mod_e] * \
+                                    elements[elem_name][breadth] * elements[elem_name][height]**3 / 12
     zna = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
     ei_na = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - zna **2 * calc_sum_column_elements(ef)
     for key in wd_elements:
         elem_name = wd_elements[key][name].get()
-        elements[elem_name][dist_zna] = float(elements[elem_name][dist_z]) - zna
-        elements[elem_name][sig_act] = float(general[moment]) / ei_na * elements[elem_name][dist_zna] * float(elements[elem_name][mod_e])
+        elements[elem_name][dist_zna] = elements[elem_name][dist_z] - zna
+        elements[elem_name][sig_act] = general[moment] / ei_na * elements[elem_name][dist_zna] * elements[elem_name][mod_e]
     show_result()
     print(calc_sum_column_elements(efz2))
     print(calc_sum_column_elements(ebh3))
@@ -395,9 +389,12 @@ def show_result():
         for title in title_elements:
             if title == material or title == orientation:
                 wd_elements[key][title].set(elements[elem_name][title])
-            else:
+            elif title == name:
                 wd_elements[key][title].delete(0, tk.END)
                 wd_elements[key][title].insert(0, elements[elem_name][title])
+            else:
+                wd_elements[key][title].delete(0, tk.END)
+                wd_elements[key][title].insert(0, f'{elements[elem_name][title]:.3e}')
 
 
 
@@ -407,6 +404,36 @@ def export_results():
 
 def export_materials():
     pass
+
+
+def is_digit(string):
+    if string.isdigit():
+       return True
+    else:
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+
+
+def show_picture():
+    scale = 0.1
+    offset = 200
+    create_elements_dict()
+    canvas_picture.create_line(0,0,500,200, fill='green', width=3)
+    for elem_name in elements:
+        if elements[elem_name][orientation] == 'vertical':
+            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)*scale * -1 + offset
+            coord_y1 = (elements[elem_name][dist_y])*scale
+            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)*scale * -1 + offset
+            coord_y2 = (elements[elem_name][dist_y])*scale
+        else:
+            coord_z1 = (elements[elem_name][dist_z])*scale * -1 + offset
+            coord_y1 = (elements[elem_name][dist_y] - elements[elem_name][breadth] / 2)*scale
+            coord_z2 = (elements[elem_name][dist_z])*scale * -1 + offset
+            coord_y2 = (elements[elem_name][dist_y] + elements[elem_name][breadth] / 2)*scale
+        canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
 
 
 if __name__ == '__main__':
@@ -425,6 +452,7 @@ if __name__ == '__main__':
     breadth = 'b, mm'
     height = 'h, mm'
     dist_z = 'z, mm'
+    dist_y = 'y, mm'
     area_f = 'F, mm2'
     ef = 'EF, N'
     efz = 'EFz, Nmm'
@@ -434,8 +462,9 @@ if __name__ == '__main__':
     sig_act = 'Sig, MPa'
     moment = 'Bending moment'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
-    title_elements = [name, material, orientation, breadth, height, qty, dist_z, mod_e,
+    title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
                       area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
+    result = [area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
     list_material = ['Metal', 'FRP']
     list_material_str = []
     orientation_element = ['horizontal', 'vertical']
@@ -445,6 +474,7 @@ if __name__ == '__main__':
     lam = {}
     mat = {}
     elements = {}
+
 
     root = tk.Tk()
     root.rowconfigure(0, weight=1)
@@ -509,7 +539,8 @@ if __name__ == '__main__':
     tk.Button(frame_material_button, text='Del', **button_config, command=del_material).grid(row=0, column=1,
                                                                                                   padx=5, pady=5)
     for title in title_material:
-        tk.Label(frame_material, text=title).grid(row=0, column=title_material.index(title))
+        tk.Label(frame_material, anchor='w', width= 15, height=1, relief='solid',
+             bd=0.5, text=title).grid(row=0, column=title_material.index(title))
 
     # sheet laminate
     sheet_laminate.rowconfigure(1, weight=1)
@@ -601,17 +632,20 @@ if __name__ == '__main__':
     canvas_elements.create_window((1, 1), window=frame_elements, anchor="nw")
     frame_elements.bind("<Configure>",
                         lambda event: canvas_elements.configure(scrollregion=canvas_elements.bbox("all")))
-
+        # picture
     canvas_picture = tk.Canvas(sheet_elements, borderwidth=1)
     canvas_picture.pack(side="top", fill="both", expand=True)
-    canvas_picture.create_line(0,0,500,200, fill='green', width=3)
-    # buttons and title on strength sheet
+
+        # buttons and title on strength sheet
     tk.Button(frame_elements_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
                                                                                              padx=5, pady=5)
     tk.Button(frame_elements_button, text='Del', **button_config, command=del_elements).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
+    tk.Button(frame_elements_button, text='Show', **button_config, command=show_picture).grid(row=0, column=2,
+                                                                                             padx=5, pady=5)
     for title in title_elements:
-        tk.Label(frame_elements, width=10, text=title).grid(row=0, column=title_elements.index(title))
+        tk.Label(frame_elements, anchor='w', width= 12, height=1, relief='solid',
+             bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
     en_elements = {}
 
     root.mainloop()
