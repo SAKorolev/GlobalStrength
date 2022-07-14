@@ -339,7 +339,7 @@ def calc_sum_column_elements(title):
 
 def clear_result_element_dict():
     for elem_name in elements:
-        for title in result:
+        for title in title_result:
             elements[elem_name][title] = 0
 
 
@@ -386,16 +386,18 @@ def calculate():
 def show_result():
     for key in wd_elements:
         elem_name = wd_elements[key][name].get()
-        for title in title_elements:
-            if title == material or title == orientation:
-                wd_elements[key][title].set(elements[elem_name][title])
-            elif title == name:
-                wd_elements[key][title].delete(0, tk.END)
-                wd_elements[key][title].insert(0, elements[elem_name][title])
-            else:
-                wd_elements[key][title].delete(0, tk.END)
-                wd_elements[key][title].insert(0, f'{elements[elem_name][title]:.3e}')
+        for title in title_result:
+            # if title == material or title == orientation:
+            #     wd_elements[key][title].set(elements[elem_name][title])
+            # elif title == name:
+            #     wd_elements[key][title].delete(0, tk.END)
+            #     wd_elements[key][title].insert(0, elements[elem_name][title])
+            # else:
 
+            wd_elements[key][title].delete(0, tk.END)
+            wd_elements[key][title].insert(0, f'{elements[elem_name][title]:.3e}')
+            en_result_zna.delete(0, tk.END)
+            en_result_zna.insert(0, )
 
 
 def export_results():
@@ -418,21 +420,33 @@ def is_digit(string):
 
 
 def show_picture():
-    scale = 0.1
-    offset = 200
+    min_z = 0
+    max_z = 0
     create_elements_dict()
-    canvas_picture.create_line(0,0,500,200, fill='green', width=3)
     for elem_name in elements:
-        if elements[elem_name][orientation] == 'vertical':
-            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)*scale * -1 + offset
-            coord_y1 = (elements[elem_name][dist_y])*scale
-            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)*scale * -1 + offset
-            coord_y2 = (elements[elem_name][dist_y])*scale
+        if elements[elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)
+            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)
         else:
-            coord_z1 = (elements[elem_name][dist_z])*scale * -1 + offset
-            coord_y1 = (elements[elem_name][dist_y] - elements[elem_name][breadth] / 2)*scale
-            coord_z2 = (elements[elem_name][dist_z])*scale * -1 + offset
-            coord_y2 = (elements[elem_name][dist_y] + elements[elem_name][breadth] / 2)*scale
+            coord_z1 = (elements[elem_name][dist_z])
+            coord_z2 = (elements[elem_name][dist_z])
+        min_z = min(min_z, coord_z1, coord_z2)
+        max_z = max(max_z, coord_z1, coord_z2)
+    field = 10
+    offset = 250
+    scale = offset / (max_z - min_z)
+
+    for elem_name in elements:
+        if elements[elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)*scale * -1 + offset + field
+            coord_y1 = (elements[elem_name][dist_y])*scale + field
+            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)*scale * -1 + offset + field
+            coord_y2 = (elements[elem_name][dist_y])*scale + field
+        else:
+            coord_z1 = (elements[elem_name][dist_z])*scale * -1 + offset + field
+            coord_y1 = (elements[elem_name][dist_y] - elements[elem_name][breadth] / 2)*scale + field
+            coord_z2 = (elements[elem_name][dist_z])*scale * -1 + offset + field
+            coord_y2 = (elements[elem_name][dist_y] + elements[elem_name][breadth] / 2)*scale + field
         canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
 
 
@@ -464,7 +478,7 @@ if __name__ == '__main__':
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
     title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
                       area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
-    result = [area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
+    title_result = [area_f, ef, efz, efz2, ebh3, dist_zna, sig_act]
     list_material = ['Metal', 'FRP']
     list_material_str = []
     orientation_element = ['horizontal', 'vertical']
@@ -495,7 +509,7 @@ if __name__ == '__main__':
     file_menu.add_command(label="Exit", command=show_ask_exit)
     main_menu.add_cascade(label="File", menu=file_menu)
     main_menu.add_command(label='Calculate', command=calculate)
-    main_menu.add_cascade(label='Export result', menu=result_menu)
+    main_menu.add_cascade(label='Export title_result', menu=result_menu)
     main_menu.add_command(label='About...', command=show_about)
 
     frame_main = tk.Frame()
@@ -633,8 +647,17 @@ if __name__ == '__main__':
     frame_elements.bind("<Configure>",
                         lambda event: canvas_elements.configure(scrollregion=canvas_elements.bbox("all")))
         # picture
-    canvas_picture = tk.Canvas(sheet_elements, borderwidth=1)
-    canvas_picture.pack(side="top", fill="both", expand=True)
+    canvas_picture = tk.Canvas(sheet_elements, borderwidth=1, bg = 'grey')
+    canvas_picture.pack(side="right", fill="both", expand=True)
+        # title_result
+    frame_elements_result = tk.Frame(sheet_elements, bg='yellow')
+    frame_elements_result.pack(side="left", fill='both')
+    tk.Label(frame_elements_result, text='Zna, mm', anchor='w').grid(row=0, column=0)
+    en_result_zna = tk.Entry(frame_elements_result)
+    en_result_zna.grid(row=0, column=1, padx=10, pady=5)
+    tk.Label(frame_elements_result, text='EI, Nmm2', anchor='w').grid(row=1, column=0)
+    en_result_ei_na = tk.Entry(frame_elements_result)
+    en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
 
         # buttons and title on strength sheet
     tk.Button(frame_elements_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
