@@ -123,16 +123,19 @@ def add_material_widgets(row_number):
             wd_material[row_number][title].grid(row=row_number, column=0)
             wd_material[row_number][title].bind('<<ComboboxSelected>>',
                                                 lambda e, i=row_number, t=title: change_material_dict(e, i, t))
-        elif title == name:
-            wd_material[row_number][title] = tk.Entry(frame_material, width=15)
-            wd_material[row_number][title].insert(0, 'material ' + str(row_number))
-            wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
+        # elif title == name:
+        #     wd_material[row_number][title] = tk.Entry(frame_material, width=15)
+        #     wd_material[row_number][title].insert(0, 'material ' + str(row_number))
+        #     wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
         else:
             wd_material[row_number][title] = tk.Entry(frame_material, width=15)
             wd_material[row_number][title].insert(0, '0.00')
             wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
             wd_material[row_number][title].bind('<FocusOut>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
             wd_material[row_number][title].bind('<Return>', lambda e, i=row_number, t=title: change_material_dict(e, i, t))
+    wd_material[row_number][name].delete(0, tk.END)
+    wd_material[row_number][name].insert(0, 'material ' + str(row_number))
+    wd_material[row_number][name].bind('<FocusIn>', lambda e, i=row_number: current_name_material(e, i))
 
 
 def add_material_dict(row_number):
@@ -154,8 +157,18 @@ def del_material():
     print(mat)
 
 
+def current_name_material(event, i):
+    global current_name
+    current_name = wd_material[i][name].get()
+
+
 def change_material_dict(e, i, t):
-    mat[wd_material[i][name].get()][t] = wd_material[i][t].get()
+    global current_name
+    if t == name:
+        mat[current_name][t] = wd_material[i][t].get()
+        mat[wd_material[i][name].get()] = mat.pop(current_name)
+    else:
+        mat[wd_material[i][name].get()][t] = wd_material[i][t].get()
     print(mat)
 
 
@@ -215,12 +228,33 @@ def select_laminate(e):
                         values=(lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]][thickness]))
 
 
-def current_name_laminate():
-    pass
+def current_name_laminate(event):
+    global current_name
+    current_name = en_laminate_name.get()
 
 
-def change_laminate_name():
-    pass
+
+def change_laminate_name(event):
+    if lb_lam1.get(0):
+        global current_name
+        if root.focus_get() != lb_lam1:
+            if en_laminate_name.get() != current_name:
+                used_name = False
+                for laminate in lam:
+                    if en_laminate_name.get() == laminate:
+                        used_name = True
+                if used_name == True:
+                    en_laminate_name.delete(0, tk.END)
+                    en_laminate_name.insert(0, current_name)
+                else:
+                    lam[en_laminate_name.get()] = lam.pop(current_name)
+                    for elem_name in elements:
+                        if elements[elem_name][material] == current_name:
+                            elements[elem_name][material] = en_laminate_name.get()
+                    current_name = en_laminate_name.get()
+                    lb_lam1.delete(0, tk.END)
+                    for laminate in lam:
+                        lb_lam1.insert(tk.END, laminate)
 
 
 def del_layer_in_laminate():
@@ -263,6 +297,7 @@ def calc_thickness_lam(lam_name):
     for ply in lam[lam_name]:
         lam_thickness += float(mat[lam[lam_name][ply]][thickness])
     return lam_thickness
+
 
 def calc_E_lam(lam_name):
     lam_thickness = 0
@@ -370,34 +405,28 @@ def calculate():
         elements[elem_name][efz2] = elements[elem_name][efz] * elements[elem_name][dist_z]
         elements[elem_name][ebh3] = elements[elem_name][mod_e] * \
                                     elements[elem_name][breadth] * elements[elem_name][height]**3 / 12
-    zna = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
-    ei_na = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - zna **2 * calc_sum_column_elements(ef)
+    results[zna] = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
+    results[ei_na] = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - results[zna] **2 * calc_sum_column_elements(ef)
     for key in wd_elements:
         elem_name = wd_elements[key][name].get()
-        elements[elem_name][dist_zna] = elements[elem_name][dist_z] - zna
-        elements[elem_name][sig_act] = general[moment] / ei_na * elements[elem_name][dist_zna] * elements[elem_name][mod_e]
+        if (elements[elem_name][dist_z] - results[zna]) >= 0:
+            elements[elem_name][dist_zna] = elements[elem_name][dist_z] - results[zna] + elements[elem_name][height]/2
+        else:
+            elements[elem_name][dist_zna] = elements[elem_name][dist_z] - results[zna] - elements[elem_name][height]/2
+        elements[elem_name][sig_act] = general[moment] / results[ei_na] * elements[elem_name][dist_zna] * elements[elem_name][mod_e]
     show_result()
-    print(calc_sum_column_elements(efz2))
-    print(calc_sum_column_elements(ebh3))
-    print(calc_sum_column_elements(ef))
-    print(zna, ei_na)
 
 
 def show_result():
     for key in wd_elements:
         elem_name = wd_elements[key][name].get()
         for title in title_result:
-            # if title == material or title == orientation:
-            #     wd_elements[key][title].set(elements[elem_name][title])
-            # elif title == name:
-            #     wd_elements[key][title].delete(0, tk.END)
-            #     wd_elements[key][title].insert(0, elements[elem_name][title])
-            # else:
-
             wd_elements[key][title].delete(0, tk.END)
             wd_elements[key][title].insert(0, f'{elements[elem_name][title]:.3e}')
             en_result_zna.delete(0, tk.END)
-            en_result_zna.insert(0, )
+            en_result_zna.insert(0, f'{results[zna]:.2f}')
+            en_result_ei_na.delete(0, tk.END)
+            en_result_ei_na.insert(0, f'{results[ei_na]:.2f}')
 
 
 def export_results():
@@ -420,6 +449,7 @@ def is_digit(string):
 
 
 def show_picture():
+    canvas_picture.delete(tk.ALL)
     min_z = 0
     max_z = 0
     create_elements_dict()
@@ -475,6 +505,8 @@ if __name__ == '__main__':
     dist_zna = 'zna, mm'
     sig_act = 'Sig, MPa'
     moment = 'Bending moment'
+    zna = 'zna'
+    ei_na = 'ei_na'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
     title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
                       area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
@@ -488,6 +520,8 @@ if __name__ == '__main__':
     lam = {}
     mat = {}
     elements = {}
+    results = {}
+    current_name = ''
 
 
     root = tk.Tk()
@@ -652,10 +686,10 @@ if __name__ == '__main__':
         # title_result
     frame_elements_result = tk.Frame(sheet_elements, bg='yellow')
     frame_elements_result.pack(side="left", fill='both')
-    tk.Label(frame_elements_result, text='Zna, mm', anchor='w').grid(row=0, column=0)
+    tk.Label(frame_elements_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=0, column=0)
     en_result_zna = tk.Entry(frame_elements_result)
     en_result_zna.grid(row=0, column=1, padx=10, pady=5)
-    tk.Label(frame_elements_result, text='EI, Nmm2', anchor='w').grid(row=1, column=0)
+    tk.Label(frame_elements_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=1, column=0)
     en_result_ei_na = tk.Entry(frame_elements_result)
     en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
 
