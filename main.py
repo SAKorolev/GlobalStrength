@@ -25,12 +25,14 @@ def new_project():
     for child in children:
         child.destroy()
     for title in title_material:
-        tk.Label(frame_material, text=title).grid(row=0, column=title_material.index(title))
+        tk.Label(frame_material, anchor='w', width= 15, height=1, relief='solid',
+             bd=0.5, text=title).grid(row=0, column=title_material.index(title))
     children = frame_elements.winfo_children()
     for child in children:
         child.destroy()
     for title in title_elements:
-        tk.Label(frame_elements, text=title).grid(row=0, column=title_elements.index(title))
+        tk.Label(frame_elements, anchor='w', width= 12, height=1, relief='solid',
+             bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
     lb_lam1.delete(0, tk.END)
     lb_lam2.delete(0, tk.END)
     tree_laminate.delete(*tree_laminate.get_children())
@@ -71,6 +73,7 @@ def open_project(input_data):
         lam[key] = {}
         for position in input_data['laminates'][key]:
             lam[key][position] = input_data['laminates'][key][position]
+    update_listbox_materials()
 
     # elements
     for key in input_data['elements']:
@@ -79,9 +82,12 @@ def open_project(input_data):
         for title in title_elements:
             if title == material or title == orientation:
                 wd_elements[row_number][title].set(input_data['elements'][key][title])
-            else:
+            elif title == name:
                 wd_elements[row_number][title].delete(0, tk.END)
                 wd_elements[row_number][title].insert(0, input_data['elements'][key][title])
+            else:
+                wd_elements[row_number][title].delete(0, tk.END)
+                wd_elements[row_number][title].insert(0, f"{input_data['elements'][key][title]:.3f}")
 
 
 def save_file():
@@ -123,10 +129,6 @@ def add_material_widgets(row_number):
             wd_material[row_number][title].grid(row=row_number, column=0)
             wd_material[row_number][title].bind('<<ComboboxSelected>>',
                                                 lambda e, i=row_number, t=title: change_material_dict(e, i, t))
-        # elif title == name:
-        #     wd_material[row_number][title] = tk.Entry(frame_material, width=15)
-        #     wd_material[row_number][title].insert(0, 'material ' + str(row_number))
-        #     wd_material[row_number][title].grid(row=row_number, column=title_material.index(title), sticky='we')
         else:
             wd_material[row_number][title] = tk.Entry(frame_material, width=15)
             wd_material[row_number][title].insert(0, '0.00')
@@ -172,7 +174,7 @@ def change_material_dict(e, i, t):
     print(mat)
 
 
-def update_listbox_materials(e):
+def update_listbox_materials(e=None):
     lb_lam2.delete(0, tk.END)
     list_material_str.clear()
     for key in mat:
@@ -231,7 +233,6 @@ def select_laminate(e):
 def current_name_laminate(event):
     global current_name
     current_name = en_laminate_name.get()
-
 
 
 def change_laminate_name(event):
@@ -329,11 +330,11 @@ def add_elements():
             wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
         else:
             wd_elements[row_number][title] = tk.Entry(frame_elements, width=12)
-            wd_elements[row_number][title].insert(0, 0)
+            wd_elements[row_number][title].insert(0, f'{0:.3f}')
             wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
 
     wd_elements[row_number][qty].delete(0, tk.END)
-    wd_elements[row_number][qty].insert(0, 1)
+    wd_elements[row_number][qty].insert(0, f'{1:.3f}')
 
 
 def del_elements():
@@ -344,16 +345,16 @@ def change_material_str(e, i, t):
     elem_name = wd_elements[i][t].get()
     if elem_name in mat:
         wd_elements[i][mod_e].delete(0, tk.END)
-        wd_elements[i][mod_e].insert(0, mat[elem_name][mod_e])
+        wd_elements[i][mod_e].insert(0, f'{mat[elem_name][mod_e]:.3f}')
     else:
         wd_elements[i][mod_e].delete(0, tk.END)
-        wd_elements[i][mod_e].insert(0, calc_E_lam(elem_name))
+        wd_elements[i][mod_e].insert(0, f'{calc_E_lam(elem_name):.3f}')
         if wd_elements[i][orientation].get() == orientation_element[0]:
             wd_elements[i][height].delete(0, tk.END)
-            wd_elements[i][height].insert(0, calc_thickness_lam(elem_name))
+            wd_elements[i][height].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
         else:
             wd_elements[i][breadth].delete(0, tk.END)
-            wd_elements[i][breadth].insert(0, calc_thickness_lam(elem_name))
+            wd_elements[i][breadth].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
 
 
 def change_orientation_str(e, i):
@@ -671,11 +672,16 @@ if __name__ == '__main__':
     frame_elements_button = tk.Frame(sheet_elements)
     frame_elements_button.pack(side="top", fill='both')
 
-    canvas_elements = tk.Canvas(sheet_elements, borderwidth=0)
+    frame_canvas_elements = tk.Frame(sheet_elements)
+    frame_canvas_elements.pack(side="top", fill='both')
+    canvas_elements = tk.Canvas(frame_canvas_elements, borderwidth=0)
     frame_elements = tk.Frame(canvas_elements)
-    scroll_elements_vertical = tk.Scrollbar(sheet_elements, orient="vertical", command=canvas_elements.yview)
+    scroll_elements_vertical = tk.Scrollbar(frame_canvas_elements, orient="vertical", command=canvas_elements.yview)
+    scroll_elements_horizontal = tk.Scrollbar(frame_canvas_elements, orient="horizontal", command=canvas_elements.xview)
     canvas_elements.configure(yscrollcommand=scroll_elements_vertical.set)
+    canvas_elements.configure(xscrollcommand=scroll_elements_horizontal.set)
     scroll_elements_vertical.pack(side="right", fill="y")
+    scroll_elements_horizontal.pack(side="bottom", fill="x")
     canvas_elements.pack(side="top", fill="both", expand=True)
     canvas_elements.create_window((1, 1), window=frame_elements, anchor="nw")
     frame_elements.bind("<Configure>",
