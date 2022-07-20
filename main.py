@@ -16,25 +16,27 @@ def new_project():
     general.clear()
     mat.clear()
     lam.clear()
-    elements.clear()
+    sections.clear()
+    calculations.clear()
     wd_material.clear()
     wd_elements.clear()
-    en_moment.delete(0, tk.END)
-    en_moment.insert(0, 0)
+    wd_calculation.clear()
+
     children = frame_material.winfo_children()
     for child in children:
-        child.destroy()
-    for title in title_material:
-        tk.Label(frame_material, anchor='w', width= 15, height=1, relief='solid',
-             bd=0.5, text=title).grid(row=0, column=title_material.index(title))
+        if child.winfo_class() != 'Label':
+            child.destroy()
     children = frame_elements.winfo_children()
     for child in children:
-        child.destroy()
-    for title in title_elements:
-        tk.Label(frame_elements, anchor='w', width=12, height=1, relief='solid',
-                 bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
+        if child.winfo_class() != 'Label':
+            child.destroy()
+    children = frame_calculation.winfo_children()
+    for child in children:
+        if child.winfo_class() != 'Label':
+            child.destroy()
     lb_lam1.delete(0, tk.END)
     lb_lam2.delete(0, tk.END)
+    lb_section.delete(0, tk.END)
     tree_laminate.delete(*tree_laminate.get_children())
 
 
@@ -51,8 +53,8 @@ def open_file():
 
 def open_project(input_data):
     # general
-    en_moment.delete(0, tk.END)
-    en_moment.insert(0, input_data['general'][moment])
+    # en_moment.delete(0, tk.END)
+    # en_moment.insert(0, input_data['general'][moment])
     # materials
     mat.clear()
     for key in input_data['material']:
@@ -75,19 +77,39 @@ def open_project(input_data):
             lam[key][position] = input_data['laminates'][key][position]
     update_listbox_materials()
 
-    # elements
-    for key in input_data['elements']:
-        row_number = frame_elements.grid_size()[1]
-        add_elements()
-        for title in title_elements:
-            if title == material or title == orientation:
-                wd_elements[row_number][title].set(input_data['elements'][key][title])
-            elif title == name:
-                wd_elements[row_number][title].delete(0, tk.END)
-                wd_elements[row_number][title].insert(0, input_data['elements'][key][title])
+    # sections
+    for name_section in input_data['sections']:
+        en_section_name.delete(0, tk.END)
+        en_section_name.insert(0, name_section)
+
+        lb_section.insert(tk.END, name_section)
+
+        for key in input_data['sections'][name_section]:
+            row_number = frame_elements.grid_size()[1]
+            wd_elements[name_section] = {}
+            add_elements()
+
+            for title in title_elements:
+                if title == material or title == orientation or title == location:
+                    wd_elements[name_section][row_number][title].set(input_data['sections'][name_section][key][title])
+                elif title == name:
+                    wd_elements[name_section][row_number][title].delete(0, tk.END)
+                    wd_elements[name_section][row_number][title].insert(0, input_data['sections'][name_section][key][title])
+                else:
+                    wd_elements[name_section][row_number][title].delete(0, tk.END)
+                    wd_elements[name_section][row_number][title].insert(0, f"{input_data['sections'][name_section][key][title]:.3f}")
+        clear_element_widgets()
+    # calculation
+    for name_calc in input_data['calculations']:
+        row_number = frame_calculation.grid_size()[1]
+        add_calculation()
+
+        for title in title_calculation:
+            if title == section:
+                wd_calculation[row_number][title].set(input_data['calculations'][name_calc][title])
             else:
-                wd_elements[row_number][title].delete(0, tk.END)
-                wd_elements[row_number][title].insert(0, f"{input_data['elements'][key][title]:.3f}")
+                wd_calculation[row_number][title].delete(0, tk.END)
+                wd_calculation[row_number][title].insert(0, input_data['calculations'][name_calc][title])
 
 
 def save_file():
@@ -101,9 +123,10 @@ def save_file():
     output_data['general'] = general
     output_data['material'] = mat
     output_data['laminates'] = lam
-    create_elements_dict()
-    clear_result_element_dict()
-    output_data['elements'] = elements
+    create_sections_dict()
+    output_data['sections'] = sections
+    create_calculation_dict()
+    output_data['calculations'] = calculations
 
     dict_json = json.dumps(output_data)
     try:
@@ -174,18 +197,34 @@ def change_material_dict(e, i, t):
     print(mat)
 
 
-def update_listbox_materials(e=None):
+def update_listbox(event):
+    update_listbox_materials()
+    update_listbox_calculation()
+
+
+def update_listbox_materials(event=None):
     lb_lam2.delete(0, tk.END)
-    list_material_str.clear()
+    list_material_calc.clear()
     for key in mat:
         if mat[key][material] == list_material[1]:
             lb_lam2.insert(tk.END, key)
         else:
-            list_material_str.append(key)
+            list_material_calc.append(key)
     for key in lam:
-        list_material_str.append(key)
+        list_material_calc.append(key)
+    for name_section in wd_elements:
+        for key in wd_elements[name_section]:
+            wd_elements[name_section][key][material].configure(value=list_material_calc)
+
+
+def update_listbox_calculation(event=None):
+    list_section = []
     for key in wd_elements:
-        wd_elements[key][material].configure(value=list_material_str)
+        list_section.append(key)
+    for key in wd_calculation:
+        wd_calculation[key][section].configure(value=list_section)
+
+
 
 
 def add_laminate():
@@ -249,9 +288,9 @@ def change_laminate_name(event):
                     en_laminate_name.insert(0, current_name)
                 else:
                     lam[en_laminate_name.get()] = lam.pop(current_name)
-                    for elem_name in elements:
-                        if elements[elem_name][material] == current_name:
-                            elements[elem_name][material] = en_laminate_name.get()
+                    for elem_name in sections:
+                        if sections[elem_name][material] == current_name:
+                            sections[elem_name][material] = en_laminate_name.get()
                     current_name = en_laminate_name.get()
                     lb_lam1.delete(0, tk.END)
                     for laminate in lam:
@@ -359,7 +398,7 @@ def add_elements():
     wd_elements[name_section][row_number] = {}
     for title in title_elements:
         if title == material:
-            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_material_str)
+            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_material_calc)
             wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
             wd_elements[name_section][row_number][title].bind('<<ComboboxSelected>>',
                                                     lambda e, i=row_number, t=title: change_material_str(e, i, t))
@@ -424,53 +463,94 @@ def change_orientation_str(e, i):
 
 def calc_sum_column_elements(title):
     sum_elements = 0
-    for key in elements:
-        sum_elements += float(elements[key][title])
+    for key in sections:
+        sum_elements += float(sections[key][title])
     return sum_elements
 
 
 def clear_result_element_dict():
-    for elem_name in elements:
+    for elem_name in sections:
         for title in title_result:
-            elements[elem_name][title] = 0
+            sections[elem_name][title] = 0
 
 
-def create_elements_dict():
-    elements.clear()
-    for key in wd_elements:
-        elem_name = wd_elements[key][name].get()
-        elements[elem_name] = {}
-        for title in wd_elements[key]:
-            if is_digit(wd_elements[key][title].get()):
-                elements[elem_name][title] = float(wd_elements[key][title].get())
+def add_calculation():
+    row_number = frame_calculation.grid_size()[1]
+    wd_calculation[row_number] = {}
+    for title in title_calculation:
+        if title == section:
+            wd_calculation[row_number][title] = ttk.Combobox(frame_calculation, width=15)
+            # wd_calculation[row_number][title].current(0)
+            wd_calculation[row_number][title].grid(row=row_number, column=title_calculation.index(title))
+        else:
+            wd_calculation[row_number][title] = tk.Entry(frame_calculation, width=15)
+            wd_calculation[row_number][title].insert(0, '0.00')
+            wd_calculation[row_number][title].grid(row=row_number, column=title_calculation.index(title), sticky='we')
+    wd_calculation[row_number][name].delete(0, tk.END)
+    wd_calculation[row_number][name].insert(0, 'calculation ' + str(row_number))
+    update_listbox_calculation()
+
+
+def del_calculation():
+    children = frame_calculation.winfo_children()
+    widget = frame_calculation.focus_get()
+    if widget in children:
+        i = widget.grid_info()['row']
+        for widget1 in children:
+            if int(widget1.grid_info()['row']) == i:
+                widget1.destroy()
+        del wd_calculation[i]
+
+
+def create_sections_dict():
+    sections.clear()
+    for name_section in wd_elements:
+        sections[name_section] = {}
+        for key in wd_elements[name_section]:
+            elem_name = wd_elements[name_section][key][name].get()
+            sections[name_section][elem_name] = {}
+            for title in title_elements:
+                if is_digit(wd_elements[name_section][key][title].get()):
+                    sections[name_section][elem_name][title] = float(wd_elements[name_section][key][title].get())
+                else:
+                    sections[name_section][elem_name][title] = wd_elements[name_section][key][title].get()
+
+
+def create_calculation_dict():
+    calculations.clear()
+    for key in wd_calculation:
+        name_calc = wd_calculation[key][name].get()
+        calculations[name_calc] = {}
+        for title in title_calculation:
+            if is_digit(wd_calculation[key][title].get()):
+                calculations[name_calc][title] = float(wd_calculation[key][title].get())
             else:
-                elements[elem_name][title] = wd_elements[key][title].get()
+                calculations[name_calc][title] = wd_calculation[key][title].get()
 
 
 def create_general_dict():
     general.clear()
-    general[moment] = float(en_moment.get())
 
 
 def calculate():
-    create_elements_dict()
+    create_sections_dict()
     create_general_dict()
-    for elem_name in elements:
-        elements[elem_name][area_f] = elements[elem_name][breadth] * elements[elem_name][height]
-        elements[elem_name][ef] = elements[elem_name][area_f] * elements[elem_name][mod_e]
-        elements[elem_name][efz] = elements[elem_name][ef] * elements[elem_name][dist_z]
-        elements[elem_name][efz2] = elements[elem_name][efz] * elements[elem_name][dist_z]
-        elements[elem_name][ebh3] = elements[elem_name][mod_e] * \
-                                    elements[elem_name][breadth] * elements[elem_name][height]**3 / 12
+    for elem_name in sections:
+        sections[elem_name][area_f] = sections[elem_name][breadth] * sections[elem_name][height]
+        sections[elem_name][ef] = sections[elem_name][area_f] * sections[elem_name][mod_e]
+        sections[elem_name][efz] = sections[elem_name][ef] * sections[elem_name][dist_z]
+        sections[elem_name][efz2] = sections[elem_name][efz] * sections[elem_name][dist_z]
+        sections[elem_name][ebh3] = sections[elem_name][mod_e] * \
+                                    sections[elem_name][breadth] * sections[elem_name][height] ** 3 / 12
     results[zna] = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
     results[ei_na] = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - results[zna] **2 * calc_sum_column_elements(ef)
     for key in wd_elements:
         elem_name = wd_elements[key][name].get()
-        if (elements[elem_name][dist_z] - results[zna]) >= 0:
-            elements[elem_name][dist_zna] = elements[elem_name][dist_z] - results[zna] + elements[elem_name][height]/2
+        if (sections[elem_name][dist_z] - results[zna]) >= 0:
+            sections[elem_name][dist_zna] = sections[elem_name][dist_z] - results[zna] + sections[elem_name][height] / 2
         else:
-            elements[elem_name][dist_zna] = elements[elem_name][dist_z] - results[zna] - elements[elem_name][height]/2
-        elements[elem_name][sig_act] = general[moment] / results[ei_na] * elements[elem_name][dist_zna] * elements[elem_name][mod_e]
+            sections[elem_name][dist_zna] = sections[elem_name][dist_z] - results[zna] - sections[elem_name][height] / 2
+        sections[elem_name][sig_act] = general[moment] / results[ei_na] * sections[elem_name][dist_zna] * sections[elem_name][mod_e]
     show_result()
 
 
@@ -479,7 +559,7 @@ def show_result():
         elem_name = wd_elements[key][name].get()
         for title in title_result:
             wd_elements[key][title].delete(0, tk.END)
-            wd_elements[key][title].insert(0, f'{elements[elem_name][title]:.3e}')
+            wd_elements[key][title].insert(0, f'{sections[elem_name][title]:.3e}')
             en_result_zna.delete(0, tk.END)
             en_result_zna.insert(0, f'{results[zna]:.2f}')
             en_result_ei_na.delete(0, tk.END)
@@ -509,31 +589,31 @@ def show_picture():
     canvas_picture.delete(tk.ALL)
     min_z = 0
     max_z = 0
-    create_elements_dict()
-    for elem_name in elements:
-        if elements[elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)
-            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)
+    create_sections_dict()
+    for elem_name in sections:
+        if sections[elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (sections[elem_name][dist_z] - sections[elem_name][height] / 2)
+            coord_z2 = (sections[elem_name][dist_z] + sections[elem_name][height] / 2)
         else:
-            coord_z1 = (elements[elem_name][dist_z])
-            coord_z2 = (elements[elem_name][dist_z])
+            coord_z1 = (sections[elem_name][dist_z])
+            coord_z2 = (sections[elem_name][dist_z])
         min_z = min(min_z, coord_z1, coord_z2)
         max_z = max(max_z, coord_z1, coord_z2)
     field = 10
     offset = 250
     scale = offset / (max_z - min_z)
 
-    for elem_name in elements:
-        if elements[elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (elements[elem_name][dist_z] - elements[elem_name][height]/2)*scale * -1 + offset + field
-            coord_y1 = (elements[elem_name][dist_y])*scale + field
-            coord_z2 = (elements[elem_name][dist_z] + elements[elem_name][height]/2)*scale * -1 + offset + field
-            coord_y2 = (elements[elem_name][dist_y])*scale + field
+    for elem_name in sections:
+        if sections[elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (sections[elem_name][dist_z] - sections[elem_name][height] / 2) * scale * -1 + offset + field
+            coord_y1 = (sections[elem_name][dist_y]) * scale + field
+            coord_z2 = (sections[elem_name][dist_z] + sections[elem_name][height] / 2) * scale * -1 + offset + field
+            coord_y2 = (sections[elem_name][dist_y]) * scale + field
         else:
-            coord_z1 = (elements[elem_name][dist_z])*scale * -1 + offset + field
-            coord_y1 = (elements[elem_name][dist_y] - elements[elem_name][breadth] / 2)*scale + field
-            coord_z2 = (elements[elem_name][dist_z])*scale * -1 + offset + field
-            coord_y2 = (elements[elem_name][dist_y] + elements[elem_name][breadth] / 2)*scale + field
+            coord_z1 = (sections[elem_name][dist_z]) * scale * -1 + offset + field
+            coord_y1 = (sections[elem_name][dist_y] - sections[elem_name][breadth] / 2) * scale + field
+            coord_z2 = (sections[elem_name][dist_z]) * scale * -1 + offset + field
+            coord_y2 = (sections[elem_name][dist_y] + sections[elem_name][breadth] / 2) * scale + field
         canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
 
 
@@ -575,15 +655,16 @@ if __name__ == '__main__':
     title_calculation = [name, section, moment, shear]
     list_location = ['bottom', 'side below WL', 'side above WL', 'deck', 'bulkhead', 'superstructure']
     list_material = ['Metal', 'FRP']
-    list_material_str = []
+    list_material_calc = []
     orientation_element = ['horizontal', 'vertical']
     wd_material = {}
     wd_elements = {}
+    wd_calculation = {}
     general = {}
     lam = {}
     mat = {}
-    elements = {}
     sections = {}
+    calculations = {}
     results = {}
     current_name = ''
 
@@ -627,7 +708,7 @@ if __name__ == '__main__':
     sheet_calculation = ttk.Frame(sheet)
     sheet.add(sheet_calculation, text='Calculate')
     sheet.grid(row=0, column=0, sticky='snwe')
-    sheet.bind('<<NotebookTabChanged>>', update_listbox_materials)
+    sheet.bind('<<NotebookTabChanged>>', update_listbox)
     # sheet general
     frame_general = tk.Frame(sheet_general)
     frame_general.grid(row=0, column=0, sticky='nsew')
@@ -754,7 +835,7 @@ if __name__ == '__main__':
     frame_canvas_picture.grid(row=0, column=1, sticky='wn')
     canvas_picture = tk.Canvas(frame_canvas_picture, borderwidth=1, bg='light grey', height=356)
     canvas_picture.grid(row=0, column=0, sticky='wn')
-        # elements
+        # sections
     frame_elements_global = tk.LabelFrame(sheet_elements, text='Elements')
     frame_elements_global.grid(row=1, column=0, columnspan=2, sticky='nwe')
     frame_elements_global.columnconfigure(0, weight=1)
@@ -830,9 +911,9 @@ if __name__ == '__main__':
                         lambda event: canvas_calculation.configure(scrollregion=canvas_calculation.bbox("all")))
 
     # buttons and title on strength sheet
-    tk.Button(frame_calculation_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
+    tk.Button(frame_calculation_button, text='Add', **button_config, command=add_calculation).grid(row=0, column=0,
                                                                                              padx=5, pady=5)
-    tk.Button(frame_calculation_button, text='Del', **button_config, command=del_elements).grid(row=0, column=1,
+    tk.Button(frame_calculation_button, text='Del', **button_config, command=del_calculation).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
     # tk.Button(frame_calculation_button, text='Show', **button_config, command=show_picture).grid(row=0, column=2,
     #                                                                                           padx=5, pady=5)
