@@ -31,8 +31,8 @@ def new_project():
     for child in children:
         child.destroy()
     for title in title_elements:
-        tk.Label(frame_elements, anchor='w', width= 12, height=1, relief='solid',
-             bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
+        tk.Label(frame_elements, anchor='w', width=12, height=1, relief='solid',
+                 bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
     lb_lam1.delete(0, tk.END)
     lb_lam2.delete(0, tk.END)
     tree_laminate.delete(*tree_laminate.get_children())
@@ -309,61 +309,117 @@ def calc_E_lam(lam_name):
     return (lam_Ethickness/lam_thickness)
 
 
+def add_section():
+    name_section = 'section' + str(lb_section.index(tk.END))
+    en_section_name.delete(0, tk.END)
+    en_section_name.insert(0, name_section)
+    clear_element_widgets()
+    lb_section.insert(tk.END, name_section)
+    lb_section.select_clear(0, tk.END)
+    lb_section.select_set(tk.END)
+    # sections[name_section] = {}
+    wd_elements[name_section] = {}
+
+
+def del_section():
+    if lb_section.curselection():
+        clear_element_widgets()
+        i = lb_section.curselection()[0]
+        name_section = lb_section.get(i)
+        # del sections[name_section]
+        del wd_elements[name_section]
+        en_section_name.delete(0, tk.END)
+        lb_section.delete(i)
+    print(wd_elements)
+
+
+def select_section(event):
+    if lb_section.curselection():
+        clear_element_widgets()
+        i = lb_section.curselection()[0]
+        name_section = lb_section.get(i)
+        for row_number in wd_elements[name_section]:
+            for title in title_elements:
+                wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+        en_section_name.delete(0, tk.END)
+        en_section_name.insert(0, name_section)
+    # print(sections)
+
+
+def clear_element_widgets():
+    children = frame_elements.winfo_children()
+    for child in children:
+        if child.winfo_class() != 'Label':
+            child.grid_forget()
+
+
 def add_elements():
     row_number = frame_elements.grid_size()[1]
-    wd_elements[row_number] = {}
+    name_section = en_section_name.get()
+    wd_elements[name_section][row_number] = {}
     for title in title_elements:
         if title == material:
-            wd_elements[row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_material_str)
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
-            wd_elements[row_number][title].bind('<<ComboboxSelected>>',
+            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_material_str)
+            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+            wd_elements[name_section][row_number][title].bind('<<ComboboxSelected>>',
                                                     lambda e, i=row_number, t=title: change_material_str(e, i, t))
         elif title == orientation:
-            wd_elements[row_number][title] = ttk.Combobox(frame_elements, width=10, values=orientation_element)
-            wd_elements[row_number][title].current(0)
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
-            wd_elements[row_number][title].bind('<<ComboboxSelected>>',
+            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=orientation_element)
+            wd_elements[name_section][row_number][title].current(0)
+            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+            wd_elements[name_section][row_number][title].bind('<<ComboboxSelected>>',
                                                 lambda e, i=row_number: change_orientation_str(e, i))
-        elif title == name:
-            wd_elements[row_number][title] = tk.Entry(frame_elements, width=12)
-            wd_elements[row_number][title].insert(0, 'element ' + str(row_number))
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
-        else:
-            wd_elements[row_number][title] = tk.Entry(frame_elements, width=12)
-            wd_elements[row_number][title].insert(0, f'{0:.3f}')
-            wd_elements[row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+        elif title == location:
+            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_location)
+            wd_elements[name_section][row_number][title].current(0)
+            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
 
-    wd_elements[row_number][qty].delete(0, tk.END)
-    wd_elements[row_number][qty].insert(0, f'{1:.3f}')
+        elif title == name:
+            wd_elements[name_section][row_number][title] = tk.Entry(frame_elements, width=12)
+            wd_elements[name_section][row_number][title].insert(0, 'element ' + str(row_number))
+            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+        else:
+            wd_elements[name_section][row_number][title] = tk.Entry(frame_elements, width=12)
+            wd_elements[name_section][row_number][title].insert(0, f'{0:.3f}')
+            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+
+    wd_elements[name_section][row_number][qty].delete(0, tk.END)
+    wd_elements[name_section][row_number][qty].insert(0, f'{1:.3f}')
 
 
 def del_elements():
-    pass
+    children = frame_elements.winfo_children()
+    widget = frame_elements.focus_get()
+    if widget in children:
+        i = widget.grid_info()['row']
+        name_section = en_section_name.get()
+        for widget1 in children:
+            print(widget1.grid_info())
+            if widget1.grid_info() != {} and int(widget1.grid_info()['row']) == i:
+                widget1.destroy()
+        del wd_elements[name_section][i]
 
 
 def change_material_str(e, i, t):
-    elem_name = wd_elements[i][t].get()
-    if elem_name in mat:
-        wd_elements[i][mod_e].delete(0, tk.END)
-        wd_elements[i][mod_e].insert(0, f'{mat[elem_name][mod_e]:.3f}')
-    else:
-        wd_elements[i][mod_e].delete(0, tk.END)
-        wd_elements[i][mod_e].insert(0, f'{calc_E_lam(elem_name):.3f}')
-        if wd_elements[i][orientation].get() == orientation_element[0]:
-            wd_elements[i][height].delete(0, tk.END)
-            wd_elements[i][height].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
+    name_section = en_section_name.get()
+    elem_name = wd_elements[name_section][i][t].get()
+    if elem_name not in mat:
+        if wd_elements[name_section][i][orientation].get() == orientation_element[0]:
+            wd_elements[name_section][i][height].delete(0, tk.END)
+            wd_elements[name_section][i][height].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
         else:
             wd_elements[i][breadth].delete(0, tk.END)
             wd_elements[i][breadth].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
 
 
 def change_orientation_str(e, i):
-    elem_breadth = wd_elements[i][breadth].get()
-    elem_height = wd_elements[i][height].get()
-    wd_elements[i][breadth].delete(0, tk.END)
-    wd_elements[i][breadth].insert(0, elem_height)
-    wd_elements[i][height].delete(0, tk.END)
-    wd_elements[i][height].insert(0, elem_breadth)
+    name_section = en_section_name.get()
+    elem_breadth = wd_elements[name_section][i][breadth].get()
+    elem_height = wd_elements[name_section][i][height].get()
+    wd_elements[name_section][i][breadth].delete(0, tk.END)
+    wd_elements[name_section][i][breadth].insert(0, elem_height)
+    wd_elements[name_section][i][height].delete(0, tk.END)
+    wd_elements[name_section][i][height].insert(0, elem_breadth)
 
 
 def calc_sum_column_elements(title):
@@ -506,12 +562,18 @@ if __name__ == '__main__':
     dist_zna = 'zna, mm'
     sig_act = 'Sig, MPa'
     moment = 'Bending moment'
+    shear = 'Shear force'
+    section = 'Section'
     zna = 'zna'
     ei_na = 'ei_na'
+    location = 'Location'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
-    title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
-                      area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
+    title_elements = [name, location, material, orientation, breadth, height, qty, dist_y, dist_z]
+    # title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
+    #                   area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
     title_result = [area_f, ef, efz, efz2, ebh3, dist_zna, sig_act]
+    title_calculation = [name, section, moment, shear]
+    list_location = ['bottom', 'side below WL', 'side above WL', 'deck', 'bulkhead', 'superstructure']
     list_material = ['Metal', 'FRP']
     list_material_str = []
     orientation_element = ['horizontal', 'vertical']
@@ -521,6 +583,7 @@ if __name__ == '__main__':
     lam = {}
     mat = {}
     elements = {}
+    sections = {}
     results = {}
     current_name = ''
 
@@ -560,7 +623,9 @@ if __name__ == '__main__':
     sheet_laminate = ttk.Frame(sheet)
     sheet.add(sheet_laminate,text='Laminates')
     sheet_elements = ttk.Frame(sheet)
-    sheet.add(sheet_elements,text='Global strength')
+    sheet.add(sheet_elements,text='Sections')
+    sheet_calculation = ttk.Frame(sheet)
+    sheet.add(sheet_calculation, text='Calculate')
     sheet.grid(row=0, column=0, sticky='snwe')
     sheet.bind('<<NotebookTabChanged>>', update_listbox_materials)
     # sheet general
@@ -668,12 +733,39 @@ if __name__ == '__main__':
     tk.Label(frame_laminate_structure, text='outer').grid(row=3, column=11, sticky='n')
     tk.Label(frame_laminate_structure, text='inner').grid(row=4, column=11, sticky='s')
 
-    # sheet global strength
-    frame_elements_button = tk.Frame(sheet_elements)
-    frame_elements_button.pack(side="top", fill='both')
+    # sheet sections
+    sheet_elements.columnconfigure(1, weight=1)
+    sheet_elements.rowconfigure(1, weight=1)
+        # section listbox
+    frame_elements_section = tk.LabelFrame(sheet_elements, text='Sections')
+    frame_elements_section.grid(row=0, column=0, sticky='wn')
+    frame_elements_section_button = tk.Frame(frame_elements_section)
+    frame_elements_section_button.grid(row=0, column=0, sticky='nw')
 
-    frame_canvas_elements = tk.Frame(sheet_elements)
-    frame_canvas_elements.pack(side="top", fill='both')
+    tk.Button(frame_elements_section_button, text='Add', **button_config, command=add_section).grid(row=0, column=0,
+                                                                            padx=5, pady=5)
+    tk.Button(frame_elements_section_button, text='Del', **button_config, command=del_section).grid(row=0, column=1,
+                                                                                             padx=5, pady=5)
+    lb_section = tk.Listbox(frame_elements_section, height=20, width=40)
+    lb_section.grid(row=1, column=0)
+    lb_section.bind('<<ListboxSelect>>', select_section)
+        # picture
+    frame_canvas_picture = tk.LabelFrame(sheet_elements, text='Picture')
+    frame_canvas_picture.grid(row=0, column=1, sticky='wn')
+    canvas_picture = tk.Canvas(frame_canvas_picture, borderwidth=1, bg='light grey', height=356)
+    canvas_picture.grid(row=0, column=0, sticky='wn')
+        # elements
+    frame_elements_global = tk.LabelFrame(sheet_elements, text='Elements')
+    frame_elements_global.grid(row=1, column=0, columnspan=2, sticky='nwe')
+    frame_elements_global.columnconfigure(0, weight=1)
+    frame_elements_global.rowconfigure(1, weight=1)
+
+    frame_elements_button = tk.Frame(frame_elements_global)
+    frame_elements_button.grid(row=0, column=0, sticky='we')
+
+    frame_canvas_elements = tk.Frame(frame_elements_global)
+    frame_canvas_elements.grid(row=1, column=0, sticky='we')
+    frame_canvas_elements.rowconfigure(0, weight=1)
     canvas_elements = tk.Canvas(frame_canvas_elements, borderwidth=0)
     frame_elements = tk.Frame(canvas_elements)
     scroll_elements_vertical = tk.Scrollbar(frame_canvas_elements, orient="vertical", command=canvas_elements.yview)
@@ -686,19 +778,6 @@ if __name__ == '__main__':
     canvas_elements.create_window((1, 1), window=frame_elements, anchor="nw")
     frame_elements.bind("<Configure>",
                         lambda event: canvas_elements.configure(scrollregion=canvas_elements.bbox("all")))
-        # picture
-    canvas_picture = tk.Canvas(sheet_elements, borderwidth=1, bg = 'grey')
-    canvas_picture.pack(side="right", fill="both", expand=True)
-        # title_result
-    frame_elements_result = tk.Frame(sheet_elements, bg='yellow')
-    frame_elements_result.pack(side="left", fill='both')
-    tk.Label(frame_elements_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=0, column=0)
-    en_result_zna = tk.Entry(frame_elements_result)
-    en_result_zna.grid(row=0, column=1, padx=10, pady=5)
-    tk.Label(frame_elements_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=1, column=0)
-    en_result_ei_na = tk.Entry(frame_elements_result)
-    en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
-
         # buttons and title on strength sheet
     tk.Button(frame_elements_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
                                                                                              padx=5, pady=5)
@@ -706,9 +785,61 @@ if __name__ == '__main__':
                                                                                              padx=5, pady=5)
     tk.Button(frame_elements_button, text='Show', **button_config, command=show_picture).grid(row=0, column=2,
                                                                                              padx=5, pady=5)
+    tk.Label(frame_elements_button, text='Label: ').grid(row=0, column=3)
+    en_section_name = tk.Entry(frame_elements_button)
+    en_section_name.grid(row=0, column=4)
     for title in title_elements:
         tk.Label(frame_elements, anchor='w', width= 12, height=1, relief='solid',
              bd=0.5, text=title).grid(row=0, column=title_elements.index(title))
     en_elements = {}
+
+    # sheet calculation
+
+    frame_calculation_tree = ttk.Treeview(sheet_calculation)
+    frame_calculation_tree.pack(side="bottom", fill='both')
+    # title_result
+    frame_calculation_result = tk.Frame(sheet_calculation, bg='yellow')
+    frame_calculation_result.pack(side="right", fill='both')
+    tk.Label(frame_calculation_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=0,
+                                                                                                column=0, sticky='w')
+    en_result_zna = tk.Entry(frame_calculation_result)
+    en_result_zna.grid(row=0, column=1, padx=10, pady=5)
+    tk.Label(frame_calculation_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=1,
+                                                                                                column=0, sticky='w')
+    en_result_ei_na = tk.Entry(frame_calculation_result)
+    en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
+
+
+        #
+    frame_calculation_button = tk.Frame(sheet_calculation)
+    frame_calculation_button.pack(side="top", fill='both')
+
+    frame_canvas_calculation = tk.Frame(sheet_calculation)
+    frame_canvas_calculation.pack(side="top", fill='both')
+    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0)
+    frame_calculation = tk.Frame(canvas_calculation)
+    scroll_calculation_vertical = tk.Scrollbar(frame_canvas_calculation, orient="vertical", command=canvas_calculation.yview)
+    scroll_calculation_horizontal = tk.Scrollbar(frame_canvas_calculation, orient="horizontal", command=canvas_calculation.xview)
+    canvas_calculation.configure(yscrollcommand=scroll_calculation_vertical.set)
+    canvas_calculation.configure(xscrollcommand=scroll_calculation_horizontal.set)
+    scroll_calculation_vertical.pack(side="right", fill="y")
+    scroll_calculation_horizontal.pack(side="bottom", fill="x")
+    canvas_calculation.pack(side="top", fill="both", expand=True)
+    canvas_calculation.create_window((1, 1), window=frame_calculation, anchor="nw")
+    frame_calculation.bind("<Configure>",
+                        lambda event: canvas_calculation.configure(scrollregion=canvas_calculation.bbox("all")))
+
+    # buttons and title on strength sheet
+    tk.Button(frame_calculation_button, text='Add', **button_config, command=add_elements).grid(row=0, column=0,
+                                                                                             padx=5, pady=5)
+    tk.Button(frame_calculation_button, text='Del', **button_config, command=del_elements).grid(row=0, column=1,
+                                                                                             padx=5, pady=5)
+    # tk.Button(frame_calculation_button, text='Show', **button_config, command=show_picture).grid(row=0, column=2,
+    #                                                                                           padx=5, pady=5)
+    for title in title_calculation:
+        tk.Label(frame_calculation, anchor='w', width=15, height=1, relief='solid',
+                 bd=0.5, text=title).grid(row=0, column=title_calculation.index(title))
+
+
 
     root.mainloop()
