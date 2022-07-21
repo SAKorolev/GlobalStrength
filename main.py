@@ -461,11 +461,11 @@ def change_orientation_str(e, i):
     wd_elements[name_section][i][height].insert(0, elem_breadth)
 
 
-def calc_sum_column_elements(title):
+def calc_sum_column_elements(name_calc, title):
     sum_elements = 0
-    for key in sections:
-        sum_elements += float(sections[key][title])
-    return sum_elements
+    for key in results[name_calc][section]:
+        sum_elements += float(results[name_calc][section][key][title])
+    return float(sum_elements)
 
 
 def clear_result_element_dict():
@@ -528,30 +528,77 @@ def create_calculation_dict():
                 calculations[name_calc][title] = wd_calculation[key][title].get()
 
 
+def create_results_dict():
+    results.clear()
+    for name_calc in calculations:
+        results[name_calc] = {}
+        for title in title_calculation:
+            results[name_calc][title] = calculations[name_calc][title]
+        name_section = results[name_calc][section]
+        results[name_calc][section] = {}
+        for key in wd_elements[name_section]:
+            elem_name = wd_elements[name_section][key][name].get()
+            wd_elements[name_section][key][material].get()
+            if wd_elements[name_section][key][material].get() in lam:
+                name_lam = wd_elements[name_section][key][material].get()
+                for ply in lam[name_lam]:
+                    new_name = elem_name+' ply '+ply+' '+lam[name_lam][ply]
+                    results[name_calc][section][new_name] = {}
+                    for title in title_result:
+                        if title in title_elements:
+                            if is_digit(wd_elements[name_section][key][title].get()):
+                                results[name_calc][section][new_name][title] = float(wd_elements[name_section][key][title].get())
+                            else:
+                                results[name_calc][section][new_name][title] = wd_elements[name_section][key][title].get()
+                        else:
+                            results[name_calc][section][new_name][title] = 0
+                    results[name_calc][section][new_name][mod_e] = float(mat[lam[name_lam][ply]][mod_e])
+                    if results[name_calc][section][new_name][orientation] == orientation_element[0]:
+                        results[name_calc][section][new_name][height] = float(mat[lam[name_lam][ply]][thickness])
+                    else:
+                        results[name_calc][section][new_name][breadth] = float(mat[lam[name_lam][ply]][thickness])
+            else:
+                results[name_calc][section][elem_name] = {}
+                for title in title_result:
+                    if title in title_elements:
+                        if is_digit(wd_elements[name_section][key][title].get()):
+                            results[name_calc][section][elem_name][title] = float(wd_elements[name_section][key][title].get())
+                        else:
+                            results[name_calc][section][elem_name][title] = wd_elements[name_section][key][title].get()
+                    else:
+                        results[name_calc][section][elem_name][title] = 0
+                results[name_calc][section][elem_name][mod_e] = float(mat[results[name_calc][section][elem_name][material]][mod_e])
+    print(results)
+
+
 def create_general_dict():
     general.clear()
 
 
 def calculate():
-    create_sections_dict()
-    create_general_dict()
-    for elem_name in sections:
-        sections[elem_name][area_f] = sections[elem_name][breadth] * sections[elem_name][height]
-        sections[elem_name][ef] = sections[elem_name][area_f] * sections[elem_name][mod_e]
-        sections[elem_name][efz] = sections[elem_name][ef] * sections[elem_name][dist_z]
-        sections[elem_name][efz2] = sections[elem_name][efz] * sections[elem_name][dist_z]
-        sections[elem_name][ebh3] = sections[elem_name][mod_e] * \
-                                    sections[elem_name][breadth] * sections[elem_name][height] ** 3 / 12
-    results[zna] = calc_sum_column_elements(efz) / calc_sum_column_elements(ef)
-    results[ei_na] = calc_sum_column_elements(efz2) + calc_sum_column_elements(ebh3) - results[zna] **2 * calc_sum_column_elements(ef)
-    for key in wd_elements:
-        elem_name = wd_elements[key][name].get()
-        if (sections[elem_name][dist_z] - results[zna]) >= 0:
-            sections[elem_name][dist_zna] = sections[elem_name][dist_z] - results[zna] + sections[elem_name][height] / 2
-        else:
-            sections[elem_name][dist_zna] = sections[elem_name][dist_z] - results[zna] - sections[elem_name][height] / 2
-        sections[elem_name][sig_act] = general[moment] / results[ei_na] * sections[elem_name][dist_zna] * sections[elem_name][mod_e]
-    show_result()
+    create_calculation_dict()
+    create_results_dict()
+
+    for name_calc in results:
+        for elem_name in results[name_calc][section]:
+            results[name_calc][section][elem_name][area_f] = results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height]
+            results[name_calc][section][elem_name][ef] = results[name_calc][section][elem_name][area_f] * results[name_calc][section][elem_name][mod_e]
+            results[name_calc][section][elem_name][efz] = results[name_calc][section][elem_name][ef] * results[name_calc][section][elem_name][dist_z]
+            results[name_calc][section][elem_name][efz2] = results[name_calc][section][elem_name][efz] * results[name_calc][section][elem_name][dist_z]
+            results[name_calc][section][elem_name][ebh3] = results[name_calc][section][elem_name][mod_e] * \
+                                        results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height] ** 3 / 12
+
+        results[name_calc][zna] = calc_sum_column_elements(name_calc, efz) / calc_sum_column_elements(name_calc, ef)
+        results[name_calc][ei_na] = calc_sum_column_elements(name_calc, efz2) + calc_sum_column_elements(name_calc, ebh3) - results[name_calc][zna] **2 * calc_sum_column_elements(name_calc, ef)
+
+        for elem_name in results[name_calc][section]:
+            if (results[name_calc][section][elem_name][dist_z] - results[name_calc][zna]) >= 0:
+                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - results[name_calc][zna] + results[name_calc][section][elem_name][height] / 2
+            else:
+                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - results[name_calc][zna] - results[name_calc][section][elem_name][height] / 2
+            results[name_calc][section][elem_name][sig_act] = calculations[name_calc][moment] / results[name_calc][ei_na] * results[name_calc][section][elem_name][dist_zna] * results[name_calc][section][elem_name][mod_e]
+        print(results)
+        # show_result()
 
 
 def show_result():
@@ -650,9 +697,9 @@ if __name__ == '__main__':
     location = 'Location'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
     title_elements = [name, location, material, orientation, breadth, height, qty, dist_y, dist_z]
-    # title_elements = [name, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
-    #                   area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
-    title_result = [area_f, ef, efz, efz2, ebh3, dist_zna, sig_act]
+    title_result = [name, location, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
+                      area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
+    # title_result = [area_f, ef, efz, efz2, ebh3, dist_zna, sig_act]
     title_calculation = [name, section, moment, shear]
     list_location = ['bottom', 'side below WL', 'side above WL', 'deck', 'bulkhead', 'superstructure']
     list_material = ['Metal', 'FRP']
@@ -713,10 +760,10 @@ if __name__ == '__main__':
     # sheet general
     frame_general = tk.Frame(sheet_general)
     frame_general.grid(row=0, column=0, sticky='nsew')
-    lb_moment = tk.Label(frame_general, text='Bending mement, Nmm')
+    lb_moment = tk.Label(frame_general, text='Project :')
     lb_moment.grid(row=0, column=0)
-    en_moment = tk.Entry(frame_general)
-    en_moment.grid(row=0, column=1)
+    en_project_name = tk.Entry(frame_general)
+    en_project_name.grid(row=0, column=1)
     # sheet materials
     frame_material_button = tk.Frame(sheet_material)
     frame_material_button.pack(side="top", fill='both')
