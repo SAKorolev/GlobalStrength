@@ -79,6 +79,7 @@ def open_project(input_data):
 
     # sections
     for name_section in input_data['sections']:
+        wd_elements[name_section] = {}
         en_section_name.delete(0, tk.END)
         en_section_name.insert(0, name_section)
 
@@ -86,9 +87,7 @@ def open_project(input_data):
 
         for key in input_data['sections'][name_section]:
             row_number = frame_elements.grid_size()[1]
-            wd_elements[name_section] = {}
             add_elements()
-
             for title in title_elements:
                 if title == material or title == orientation or title == location:
                     wd_elements[name_section][row_number][title].set(input_data['sections'][name_section][key][title])
@@ -99,6 +98,7 @@ def open_project(input_data):
                     wd_elements[name_section][row_number][title].delete(0, tk.END)
                     wd_elements[name_section][row_number][title].insert(0, f"{input_data['sections'][name_section][key][title]:.3f}")
         clear_element_widgets()
+
     # calculation
     for name_calc in input_data['calculations']:
         row_number = frame_calculation.grid_size()[1]
@@ -223,8 +223,6 @@ def update_listbox_calculation(event=None):
         list_section.append(key)
     for key in wd_calculation:
         wd_calculation[key][section].configure(value=list_section)
-
-
 
 
 def add_laminate():
@@ -374,6 +372,7 @@ def del_section():
 
 def select_section(event):
     if lb_section.curselection():
+
         clear_element_widgets()
         i = lb_section.curselection()[0]
         name_section = lb_section.get(i)
@@ -382,6 +381,7 @@ def select_section(event):
                 wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
         en_section_name.delete(0, tk.END)
         en_section_name.insert(0, name_section)
+        show_picture()
     # print(sections)
 
 
@@ -590,30 +590,31 @@ def show_picture():
     min_z = 0
     max_z = 0
     create_sections_dict()
-    for elem_name in sections:
-        if sections[elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (sections[elem_name][dist_z] - sections[elem_name][height] / 2)
-            coord_z2 = (sections[elem_name][dist_z] + sections[elem_name][height] / 2)
+    name_section = en_section_name.get()
+    for elem_name in sections[name_section]:
+        if sections[name_section][elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][height] / 2)
+            coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][height] / 2)
         else:
-            coord_z1 = (sections[elem_name][dist_z])
-            coord_z2 = (sections[elem_name][dist_z])
+            coord_z1 = (sections[name_section][elem_name][dist_z])
+            coord_z2 = (sections[name_section][elem_name][dist_z])
         min_z = min(min_z, coord_z1, coord_z2)
         max_z = max(max_z, coord_z1, coord_z2)
     field = 10
     offset = 250
     scale = offset / (max_z - min_z)
 
-    for elem_name in sections:
-        if sections[elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (sections[elem_name][dist_z] - sections[elem_name][height] / 2) * scale * -1 + offset + field
-            coord_y1 = (sections[elem_name][dist_y]) * scale + field
-            coord_z2 = (sections[elem_name][dist_z] + sections[elem_name][height] / 2) * scale * -1 + offset + field
-            coord_y2 = (sections[elem_name][dist_y]) * scale + field
+    for elem_name in sections[name_section]:
+        if sections[name_section][elem_name][orientation] == orientation_element[1]:
+            coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][height] / 2) * scale * -1 + offset + field
+            coord_y1 = (sections[name_section][elem_name][dist_y]) * scale + field
+            coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][height] / 2) * scale * -1 + offset + field
+            coord_y2 = (sections[name_section][elem_name][dist_y]) * scale + field
         else:
-            coord_z1 = (sections[elem_name][dist_z]) * scale * -1 + offset + field
-            coord_y1 = (sections[elem_name][dist_y] - sections[elem_name][breadth] / 2) * scale + field
-            coord_z2 = (sections[elem_name][dist_z]) * scale * -1 + offset + field
-            coord_y2 = (sections[elem_name][dist_y] + sections[elem_name][breadth] / 2) * scale + field
+            coord_z1 = (sections[name_section][elem_name][dist_z]) * scale * -1 + offset + field
+            coord_y1 = (sections[name_section][elem_name][dist_y] - sections[name_section][elem_name][breadth] / 2) * scale + field
+            coord_z2 = (sections[name_section][elem_name][dist_z]) * scale * -1 + offset + field
+            coord_y2 = (sections[name_section][elem_name][dist_y] + sections[name_section][elem_name][breadth] / 2) * scale + field
         canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
 
 
@@ -875,12 +876,21 @@ if __name__ == '__main__':
     en_elements = {}
 
     # sheet calculation
+    sheet_calculation.rowconfigure(1, weight=1)
+    sheet_calculation.columnconfigure(1, weight=1)
+        # tree results
+    frame_calculation_tree = tk.LabelFrame(sheet_calculation, text='Results')
+    frame_calculation_tree.grid(row=1, column=0, columnspan=2, sticky='nwe')
+    frame_calculation_tree.columnconfigure(0, weight=1)
+    frame_calculation_tree.rowconfigure(0, weight=1)
+    tree_result = ttk.Treeview(frame_calculation_tree, height=20)
+    tree_result.grid(row=0, column=0, sticky='nwes')
+    sb_result = ttk.Scrollbar(frame_calculation_tree, orient='vertical')
+    sb_result.grid(row=0, column=1 ,sticky='ns')
 
-    frame_calculation_tree = ttk.Treeview(sheet_calculation)
-    frame_calculation_tree.pack(side="bottom", fill='both')
-    # title_result
-    frame_calculation_result = tk.Frame(sheet_calculation, bg='yellow')
-    frame_calculation_result.pack(side="right", fill='both')
+        # general results
+    frame_calculation_result = tk.LabelFrame(sheet_calculation, text='Results')
+    frame_calculation_result.grid(row=0, column=1, sticky='nwes')
     tk.Label(frame_calculation_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=0,
                                                                                                 column=0, sticky='w')
     en_result_zna = tk.Entry(frame_calculation_result)
@@ -890,14 +900,17 @@ if __name__ == '__main__':
     en_result_ei_na = tk.Entry(frame_calculation_result)
     en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
 
+        # calculation data
+    frame_calculation_data = tk.LabelFrame(sheet_calculation, text='Data')
+    frame_calculation_data.grid(row=0, column=0)
+    # frame_calculation_data.columnconfigure(0, weight=1)
 
-        #
-    frame_calculation_button = tk.Frame(sheet_calculation)
+    frame_calculation_button = tk.Frame(frame_calculation_data)
     frame_calculation_button.pack(side="top", fill='both')
 
-    frame_canvas_calculation = tk.Frame(sheet_calculation)
+    frame_canvas_calculation = tk.Frame(frame_calculation_data)
     frame_canvas_calculation.pack(side="top", fill='both')
-    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0)
+    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=500)
     frame_calculation = tk.Frame(canvas_calculation)
     scroll_calculation_vertical = tk.Scrollbar(frame_canvas_calculation, orient="vertical", command=canvas_calculation.yview)
     scroll_calculation_horizontal = tk.Scrollbar(frame_canvas_calculation, orient="horizontal", command=canvas_calculation.xview)
@@ -910,17 +923,13 @@ if __name__ == '__main__':
     frame_calculation.bind("<Configure>",
                         lambda event: canvas_calculation.configure(scrollregion=canvas_calculation.bbox("all")))
 
-    # buttons and title on strength sheet
+        # buttons and title on calculation sheet
     tk.Button(frame_calculation_button, text='Add', **button_config, command=add_calculation).grid(row=0, column=0,
                                                                                              padx=5, pady=5)
     tk.Button(frame_calculation_button, text='Del', **button_config, command=del_calculation).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
-    # tk.Button(frame_calculation_button, text='Show', **button_config, command=show_picture).grid(row=0, column=2,
-    #                                                                                           padx=5, pady=5)
     for title in title_calculation:
         tk.Label(frame_calculation, anchor='w', width=15, height=1, relief='solid',
                  bd=0.5, text=title).grid(row=0, column=title_calculation.index(title))
-
-
 
     root.mainloop()
