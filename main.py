@@ -488,6 +488,7 @@ def add_calculation():
             wd_calculation[row_number][title].grid(row=row_number, column=title_calculation.index(title), sticky='we')
     wd_calculation[row_number][name].delete(0, tk.END)
     wd_calculation[row_number][name].insert(0, 'calculation ' + str(row_number))
+    wd_calculation[row_number][name].bind('<FocusIn>', show_result)
     update_listbox_calculation()
 
 
@@ -601,16 +602,39 @@ def calculate():
         # show_result()
 
 
-def show_result():
-    for key in wd_elements:
-        elem_name = wd_elements[key][name].get()
-        for title in title_result:
-            wd_elements[key][title].delete(0, tk.END)
-            wd_elements[key][title].insert(0, f'{sections[elem_name][title]:.3e}')
+def show_result(event=None):
+    if results:
+        children = frame_calculation.winfo_children()
+        widget = frame_calculation.focus_get()
+        if widget in children:
+            i = widget.grid_info()['row']
+            name_calc = wd_calculation[i][name].get()
+            print(name_calc)
+            en_result_name.delete(0, tk.END)
+            en_result_name.insert(0, name_calc)
             en_result_zna.delete(0, tk.END)
-            en_result_zna.insert(0, f'{results[zna]:.2f}')
+            en_result_zna.insert(0, f'{results[name_calc][zna]:.2f}')
             en_result_ei_na.delete(0, tk.END)
-            en_result_ei_na.insert(0, f'{results[ei_na]:.2f}')
+            en_result_ei_na.insert(0, f'{results[name_calc][ei_na]:.2f}')
+            tree_result.delete(*tree_result.get_children())
+            for name_elem in results[name_calc][section]:
+                tree_result.insert("", index='end',
+                    values=(name_elem,
+                            results[name_calc][section][name_elem][material],
+                            f"{results[name_calc][section][name_elem][breadth]:.2f}",
+                            f"{results[name_calc][section][name_elem][height]:.2f}",
+                            f"{results[name_calc][section][name_elem][qty]:.2f}",
+                            f"{results[name_calc][section][name_elem][dist_y]:.2f}",
+                            f"{results[name_calc][section][name_elem][dist_z]:.2f}",
+                            f"{results[name_calc][section][name_elem][mod_e]:.2f}",
+                            f"{results[name_calc][section][name_elem][area_f]:.2f}",
+                            f"{results[name_calc][section][name_elem][ef]:.2f}",
+                            f"{results[name_calc][section][name_elem][efz]:.2f}",
+                            f"{results[name_calc][section][name_elem][efz2]:.2f}",
+                            f"{results[name_calc][section][name_elem][ebh3]:.2f}",
+                            f"{results[name_calc][section][name_elem][dist_zna]:.2f}",
+                            f"{results[name_calc][section][name_elem][sig_act]:.2f}",
+                            ))
 
 
 def export_results():
@@ -754,7 +778,7 @@ if __name__ == '__main__':
     sheet_elements = ttk.Frame(sheet)
     sheet.add(sheet_elements,text='Sections')
     sheet_calculation = ttk.Frame(sheet)
-    sheet.add(sheet_calculation, text='Calculate')
+    sheet.add(sheet_calculation, text='Calculation')
     sheet.grid(row=0, column=0, sticky='snwe')
     sheet.bind('<<NotebookTabChanged>>', update_listbox)
     # sheet general
@@ -930,22 +954,59 @@ if __name__ == '__main__':
     frame_calculation_tree.grid(row=1, column=0, columnspan=2, sticky='nwe')
     frame_calculation_tree.columnconfigure(0, weight=1)
     frame_calculation_tree.rowconfigure(0, weight=1)
-    tree_result = ttk.Treeview(frame_calculation_tree, height=20)
-    tree_result.grid(row=0, column=0, sticky='nwes')
     sb_result = ttk.Scrollbar(frame_calculation_tree, orient='vertical')
     sb_result.grid(row=0, column=1 ,sticky='ns')
+    tree_result = ttk.Treeview(frame_calculation_tree, show="headings", columns=("#1", "#2", "#3", "#4", "#5", "#6",
+                                                                                 "#7", "#8", "#9", "#10", "#11",
+                                                                                 "#12", "#13", "#14", "#15"))
+    tree_result.column('0', width=50)
+    tree_result.column('1', width=50)
+    tree_result.column('2', width=50)
+    tree_result.column('3', width=50)
+    tree_result.column('4', width=50)
+    tree_result.column('5', width=50)
+    tree_result.column('6', width=50)
+    tree_result.column('7', width=50)
+    tree_result.column('8', width=50)
+    tree_result.column('9', width=50)
+    tree_result.column('10', width=50)
+    tree_result.column('11', width=50)
+    tree_result.column('12', width=50)
+    tree_result.column('13', width=50)
+    tree_result.column('14', width=50)
+    tree_result.heading("#1", text=name)
+    tree_result.heading("#2", text=material)
+    tree_result.heading("#3", text=breadth)
+    tree_result.heading("#4", text=height)
+    tree_result.heading("#5", text=qty)
+    tree_result.heading("#6", text=dist_y)
+    tree_result.heading("#7", text=dist_z)
+    tree_result.heading("#8", text=mod_e)
+    tree_result.heading("#9", text=area_f)
+    tree_result.heading("#10", text=ef)
+    tree_result.heading("#11", text=efz)
+    tree_result.heading("#12", text=efz2)
+    tree_result.heading("#13", text=ebh3)
+    tree_result.heading("#14", text=dist_zna)
+    tree_result.heading("#15", text=sig_act)
+    tree_result.grid(row=0, column=0, sticky='we')
+    tree_result.config(yscrollcommand=sb_result.set)
+    sb_result.config(command=tree_result.yview)
 
         # general results
     frame_calculation_result = tk.LabelFrame(sheet_calculation, text='Results')
     frame_calculation_result.grid(row=0, column=1, sticky='nwes')
-    tk.Label(frame_calculation_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=0,
+    tk.Label(frame_calculation_result, text='Calculation label :', anchor='w').grid(row=0, column=0, sticky='w')
+    en_result_name = tk.Entry(frame_calculation_result)
+    en_result_name.grid(row=0, column=1, padx=10, pady=5)
+    tk.Label(frame_calculation_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=1,
                                                                                                 column=0, sticky='w')
     en_result_zna = tk.Entry(frame_calculation_result)
-    en_result_zna.grid(row=0, column=1, padx=10, pady=5)
-    tk.Label(frame_calculation_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=1,
+    en_result_zna.grid(row=1, column=1, padx=10, pady=5)
+    tk.Label(frame_calculation_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=2,
                                                                                                 column=0, sticky='w')
     en_result_ei_na = tk.Entry(frame_calculation_result)
-    en_result_ei_na.grid(row=1, column=1, padx=10, pady=5)
+    en_result_ei_na.grid(row=2, column=1, padx=10, pady=5)
 
         # calculation data
     frame_calculation_data = tk.LabelFrame(sheet_calculation, text='Data')
