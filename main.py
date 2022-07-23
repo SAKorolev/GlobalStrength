@@ -543,7 +543,7 @@ def create_results_dict():
             if wd_elements[name_section][key][material].get() in lam:
                 name_lam = wd_elements[name_section][key][material].get()
                 for ply in lam[name_lam]:
-                    new_name = elem_name+' ply '+ply+' '+lam[name_lam][ply]
+                    new_name = elem_name+' ply '+str(ply)+' '+lam[name_lam][ply]
                     results[name_calc][section][new_name] = {}
                     for title in title_result:
                         if title in title_elements:
@@ -569,7 +569,6 @@ def create_results_dict():
                     else:
                         results[name_calc][section][elem_name][title] = 0
                 results[name_calc][section][elem_name][mod_e] = float(mat[results[name_calc][section][elem_name][material]][mod_e])
-    print(results)
 
 
 def create_general_dict():
@@ -590,7 +589,7 @@ def calculate():
                                         results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height] ** 3 / 12
 
         results[name_calc][zna] = calc_sum_column_elements(name_calc, efz) / calc_sum_column_elements(name_calc, ef)
-        results[name_calc][ei_na] = calc_sum_column_elements(name_calc, efz2) + calc_sum_column_elements(name_calc, ebh3) - results[name_calc][zna] **2 * calc_sum_column_elements(name_calc, ef)
+        results[name_calc][ei_na] = 2*(calc_sum_column_elements(name_calc, efz2) + calc_sum_column_elements(name_calc, ebh3) - results[name_calc][zna] **2 * calc_sum_column_elements(name_calc, ef))
 
         for elem_name in results[name_calc][section]:
             if (results[name_calc][section][elem_name][dist_z] - results[name_calc][zna]) >= 0:
@@ -598,8 +597,6 @@ def calculate():
             else:
                 results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - results[name_calc][zna] - results[name_calc][section][elem_name][height] / 2
             results[name_calc][section][elem_name][sig_act] = calculations[name_calc][moment] / results[name_calc][ei_na] * results[name_calc][section][elem_name][dist_zna] * results[name_calc][section][elem_name][mod_e]
-        print(results)
-        # show_result()
 
 
 def show_result(event=None):
@@ -615,7 +612,7 @@ def show_result(event=None):
             en_result_zna.delete(0, tk.END)
             en_result_zna.insert(0, f'{results[name_calc][zna]:.2f}')
             en_result_ei_na.delete(0, tk.END)
-            en_result_ei_na.insert(0, f'{results[name_calc][ei_na]:.2f}')
+            en_result_ei_na.insert(0, f'{results[name_calc][ei_na]:.2e}')
             tree_result.delete(*tree_result.get_children())
             for name_elem in results[name_calc][section]:
                 tree_result.insert("", index='end',
@@ -626,12 +623,12 @@ def show_result(event=None):
                             f"{results[name_calc][section][name_elem][qty]:.2f}",
                             f"{results[name_calc][section][name_elem][dist_y]:.2f}",
                             f"{results[name_calc][section][name_elem][dist_z]:.2f}",
-                            f"{results[name_calc][section][name_elem][mod_e]:.2f}",
+                            f"{results[name_calc][section][name_elem][mod_e]:.2e}",
                             f"{results[name_calc][section][name_elem][area_f]:.2f}",
-                            f"{results[name_calc][section][name_elem][ef]:.2f}",
-                            f"{results[name_calc][section][name_elem][efz]:.2f}",
-                            f"{results[name_calc][section][name_elem][efz2]:.2f}",
-                            f"{results[name_calc][section][name_elem][ebh3]:.2f}",
+                            f"{results[name_calc][section][name_elem][ef]:.2e}",
+                            f"{results[name_calc][section][name_elem][efz]:.2e}",
+                            f"{results[name_calc][section][name_elem][efz2]:.2e}",
+                            f"{results[name_calc][section][name_elem][ebh3]:.2e}",
                             f"{results[name_calc][section][name_elem][dist_zna]:.2f}",
                             f"{results[name_calc][section][name_elem][sig_act]:.2f}",
                             ))
@@ -671,8 +668,8 @@ def show_picture():
             coord_z2 = (sections[name_section][elem_name][dist_z])
         min_z = min(min_z, coord_z1, coord_z2)
         max_z = max(max_z, coord_z1, coord_z2)
-    field = 10
-    offset = 250
+    field = 20
+    offset = 320
     scale = offset / (max_z - min_z)
 
     for elem_name in sections[name_section]:
@@ -687,6 +684,8 @@ def show_picture():
             coord_z2 = (sections[name_section][elem_name][dist_z]) * scale * -1 + offset + field
             coord_y2 = (sections[name_section][elem_name][dist_y] + sections[name_section][elem_name][breadth] / 2) * scale + field
         canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
+        canvas_picture.create_line(field, 0, field, offset+field, fill='red', width=1)
+        canvas_picture.create_line(field, offset+field, offset+field, offset+field, fill='red', width=1)
 
 
 if __name__ == '__main__':
@@ -699,7 +698,7 @@ if __name__ == '__main__':
     name = 'Name'
     material = 'Material'
     thickness = 'Thickness, mm'
-    mod_e = 'E, MPa'
+    mod_e = 'E, N/mm2'
     orientation = 'Orientation'
     qty  = 'Qty'
     breadth = 'b, mm'
@@ -712,9 +711,9 @@ if __name__ == '__main__':
     efz2 = 'EFz2, Nmm2'
     ebh3 = 'Eh3/12, Nmm2'
     dist_zna = 'zna, mm'
-    sig_act = 'Sig, MPa'
-    moment = 'Bending moment'
-    shear = 'Shear force'
+    sig_act = 'Sig, N/mm2'
+    moment = 'Bending moment, Nmm'
+    shear = 'Shear force, N'
     section = 'Section'
     zna = 'zna'
     ei_na = 'ei_na'
@@ -883,8 +882,8 @@ if __name__ == '__main__':
     tree_laminate.pack(side='left')
     tree_laminate.config(yscrollcommand=sb.set)
     sb.config(command=tree_laminate.yview)
-    tk.Label(frame_laminate_structure, text='outer').grid(row=3, column=11, sticky='n')
-    tk.Label(frame_laminate_structure, text='inner').grid(row=4, column=11, sticky='s')
+    # tk.Label(frame_laminate_structure, text='outer').grid(row=3, column=11, sticky='n')
+    # tk.Label(frame_laminate_structure, text='inner').grid(row=4, column=11, sticky='s')
 
     # sheet sections
     sheet_elements.columnconfigure(1, weight=1)
@@ -1018,7 +1017,7 @@ if __name__ == '__main__':
 
     frame_canvas_calculation = tk.Frame(frame_calculation_data)
     frame_canvas_calculation.pack(side="top", fill='both')
-    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=500)
+    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=550)
     frame_calculation = tk.Frame(canvas_calculation)
     scroll_calculation_vertical = tk.Scrollbar(frame_canvas_calculation, orient="vertical", command=canvas_calculation.yview)
     scroll_calculation_horizontal = tk.Scrollbar(frame_canvas_calculation, orient="horizontal", command=canvas_calculation.xview)
@@ -1037,7 +1036,7 @@ if __name__ == '__main__':
     tk.Button(frame_calculation_button, text='Del', **button_config, command=del_calculation).grid(row=0, column=1,
                                                                                              padx=5, pady=5)
     for title in title_calculation:
-        tk.Label(frame_calculation, anchor='w', width=15, height=1, relief='solid',
+        tk.Label(frame_calculation, anchor='w', width=19, height=1, relief='solid',
                  bd=0.5, text=title).grid(row=0, column=title_calculation.index(title))
 
     root.mainloop()
