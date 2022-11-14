@@ -89,7 +89,7 @@ def open_project(input_data):
             row_number = frame_elements.grid_size()[1]
             add_elements()
             for title in title_elements:
-                if title == material or title == orientation or title == location:
+                if title == material or title == location:
                     wd_elements[name_section][row_number][title].set(input_data['sections'][name_section][key][title])
                 elif title == name:
                     wd_elements[name_section][row_number][title].delete(0, tk.END)
@@ -402,12 +402,6 @@ def add_elements():
             wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
             wd_elements[name_section][row_number][title].bind('<<ComboboxSelected>>',
                                                     lambda e, i=row_number, t=title: change_material_str(e, i, t))
-        elif title == orientation:
-            wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=orientation_element)
-            wd_elements[name_section][row_number][title].current(0)
-            wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
-            wd_elements[name_section][row_number][title].bind('<<ComboboxSelected>>',
-                                                lambda e, i=row_number: change_orientation_str(e, i))
         elif title == location:
             wd_elements[name_section][row_number][title] = ttk.Combobox(frame_elements, width=10, values=list_location)
             wd_elements[name_section][row_number][title].current(0)
@@ -443,22 +437,18 @@ def change_material_str(e, i, t):
     name_section = en_section_name.get()
     elem_name = wd_elements[name_section][i][t].get()
     if elem_name not in mat:
-        if wd_elements[name_section][i][orientation].get() == orientation_element[0]:
-            wd_elements[name_section][i][height].delete(0, tk.END)
-            wd_elements[name_section][i][height].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
-        else:
-            wd_elements[i][breadth].delete(0, tk.END)
-            wd_elements[i][breadth].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
+        wd_elements[name_section][i][height].delete(0, tk.END)
+        wd_elements[name_section][i][height].insert(0, f'{calc_thickness_lam(elem_name):.3f}')
 
 
-def change_orientation_str(e, i):
-    name_section = en_section_name.get()
-    elem_breadth = wd_elements[name_section][i][breadth].get()
-    elem_height = wd_elements[name_section][i][height].get()
-    wd_elements[name_section][i][breadth].delete(0, tk.END)
-    wd_elements[name_section][i][breadth].insert(0, elem_height)
-    wd_elements[name_section][i][height].delete(0, tk.END)
-    wd_elements[name_section][i][height].insert(0, elem_breadth)
+# def change_orientation_str(e, i):
+#     name_section = en_section_name.get()
+#     elem_breadth = wd_elements[name_section][i][breadth].get()
+#     elem_height = wd_elements[name_section][i][height].get()
+#     wd_elements[name_section][i][breadth].delete(0, tk.END)
+#     wd_elements[name_section][i][breadth].insert(0, elem_height)
+#     wd_elements[name_section][i][height].delete(0, tk.END)
+#     wd_elements[name_section][i][height].insert(0, elem_breadth)
 
 
 def calc_sum_column_elements(name_calc, title):
@@ -554,10 +544,7 @@ def create_results_dict():
                         else:
                             results[name_calc][section][new_name][title] = 0
                     results[name_calc][section][new_name][mod_e] = float(mat[lam[name_lam][ply]][mod_e])
-                    if results[name_calc][section][new_name][orientation] == orientation_element[0]:
-                        results[name_calc][section][new_name][height] = float(mat[lam[name_lam][ply]][thickness])
-                    else:
-                        results[name_calc][section][new_name][breadth] = float(mat[lam[name_lam][ply]][thickness])
+                    results[name_calc][section][new_name][height] = float(mat[lam[name_lam][ply]][thickness])
             else:
                 results[name_calc][section][elem_name] = {}
                 for title in title_result:
@@ -585,17 +572,24 @@ def calculate():
             results[name_calc][section][elem_name][ef] = results[name_calc][section][elem_name][area_f] * results[name_calc][section][elem_name][mod_e]
             results[name_calc][section][elem_name][efz] = results[name_calc][section][elem_name][ef] * results[name_calc][section][elem_name][dist_z]
             results[name_calc][section][elem_name][efz2] = results[name_calc][section][elem_name][efz] * results[name_calc][section][elem_name][dist_z]
+            # results[name_calc][section][elem_name][ebh3] = results[name_calc][section][elem_name][mod_e] * \
+            #                             results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height] ** 3 / 12
             results[name_calc][section][elem_name][ebh3] = results[name_calc][section][elem_name][mod_e] * \
-                                        results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height] ** 3 / 12
-
+                results[name_calc][section][elem_name][breadth] * results[name_calc][section][elem_name][height] / 12 * \
+                (results[name_calc][section][elem_name][breadth] ** 2 * math.sin(results[name_calc][section][elem_name][angle]/180*3.1415) **2
+                 + results[name_calc][section][elem_name][height] ** 2 * math.cos(results[name_calc][section][elem_name][angle]/180*3.1415) **2)
         results[name_calc][zna] = calc_sum_column_elements(name_calc, efz) / calc_sum_column_elements(name_calc, ef)
         results[name_calc][ei_na] = 2*(calc_sum_column_elements(name_calc, efz2) + calc_sum_column_elements(name_calc, ebh3) - results[name_calc][zna] **2 * calc_sum_column_elements(name_calc, ef))
 
         for elem_name in results[name_calc][section]:
             if (results[name_calc][section][elem_name][dist_z] - results[name_calc][zna]) >= 0:
-                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - results[name_calc][zna] + results[name_calc][section][elem_name][height] / 2
+                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] -\
+                    results[name_calc][zna] + results[name_calc][section][elem_name][breadth] / 2 * \
+                    math.sin(results[name_calc][section][elem_name][angle]/180*3.1415)
             else:
-                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - results[name_calc][zna] - results[name_calc][section][elem_name][height] / 2
+                results[name_calc][section][elem_name][dist_zna] = results[name_calc][section][elem_name][dist_z] - \
+                    results[name_calc][zna] - results[name_calc][section][elem_name][breadth] / 2 * \
+                    math.sin(results[name_calc][section][elem_name][angle]/180*3.1415)
             results[name_calc][section][elem_name][sig_act] = calculations[name_calc][moment] / results[name_calc][ei_na] * results[name_calc][section][elem_name][dist_zna] * results[name_calc][section][elem_name][mod_e]
 
 
@@ -657,32 +651,33 @@ def show_picture():
     canvas_picture.delete(tk.ALL)
     min_z = 0
     max_z = 0
+    max_y = 0
     create_sections_dict()
     name_section = en_section_name.get()
     for elem_name in sections[name_section]:
-        if sections[name_section][elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][height] / 2)
-            coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][height] / 2)
-        else:
-            coord_z1 = (sections[name_section][elem_name][dist_z])
-            coord_z2 = (sections[name_section][elem_name][dist_z])
+        coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][breadth] / 2 *
+                    math.sin(sections[name_section][elem_name][angle]/180*3.1415))
+        coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][breadth] / 2 *
+                    math.sin(sections[name_section][elem_name][angle]/180*3.1415))
+        coord_y = (sections[name_section][elem_name][dist_y] + sections[name_section][elem_name][breadth] / 2 *
+                    math.cos(sections[name_section][elem_name][angle] / 180 * 3.1415))
         min_z = min(min_z, coord_z1, coord_z2)
         max_z = max(max_z, coord_z1, coord_z2)
+        max_y = max(max_y, coord_y)
+
     field = 20
     offset = 320
-    scale = offset / (max_z - min_z)
+    scale = min(offset / (max_z - min_z), offset / max_y)
 
     for elem_name in sections[name_section]:
-        if sections[name_section][elem_name][orientation] == orientation_element[1]:
-            coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][height] / 2) * scale * -1 + offset + field
-            coord_y1 = (sections[name_section][elem_name][dist_y]) * scale + field
-            coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][height] / 2) * scale * -1 + offset + field
-            coord_y2 = (sections[name_section][elem_name][dist_y]) * scale + field
-        else:
-            coord_z1 = (sections[name_section][elem_name][dist_z]) * scale * -1 + offset + field
-            coord_y1 = (sections[name_section][elem_name][dist_y] - sections[name_section][elem_name][breadth] / 2) * scale + field
-            coord_z2 = (sections[name_section][elem_name][dist_z]) * scale * -1 + offset + field
-            coord_y2 = (sections[name_section][elem_name][dist_y] + sections[name_section][elem_name][breadth] / 2) * scale + field
+        coord_z1 = (sections[name_section][elem_name][dist_z] - sections[name_section][elem_name][breadth] / 2
+                    * math.sin(sections[name_section][elem_name][angle]/180*3.1415)) * scale * -1 + offset + field
+        coord_z2 = (sections[name_section][elem_name][dist_z] + sections[name_section][elem_name][breadth] / 2
+                    * math.sin(sections[name_section][elem_name][angle]/180*3.1415)) * scale * -1 + offset + field
+        coord_y1 = (sections[name_section][elem_name][dist_y] - sections[name_section][elem_name][breadth] / 2
+                    * math.cos(sections[name_section][elem_name][angle]/180*3.1415)) * scale + field
+        coord_y2 = (sections[name_section][elem_name][dist_y] + sections[name_section][elem_name][breadth] / 2
+                    * math.cos(sections[name_section][elem_name][angle]/180*3.1415)) * scale + field
         canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
         canvas_picture.create_line(field, 0, field, offset+field, fill='red', width=1)
         canvas_picture.create_line(field, offset+field, offset+field, offset+field, fill='red', width=1)
@@ -694,13 +689,15 @@ if __name__ == '__main__':
     import tkinter as tk
     import tkinter.ttk as ttk
     import json
+    import math
 
     name = 'Name'
     material = 'Material'
     thickness = 'Thickness, mm'
     mod_e = 'E, N/mm2'
-    orientation = 'Orientation'
-    qty  = 'Qty'
+    # orientation = 'Orientation'
+    angle = 'Angle, deg'
+    qty = 'Qty'
     breadth = 'b, mm'
     height = 'h, mm'
     dist_z = 'z, mm'
@@ -719,15 +716,15 @@ if __name__ == '__main__':
     ei_na = 'ei_na'
     location = 'Location'
     title_material = [material, name, mod_e, 'Sig, MPa', 'Tau, MPa', thickness]
-    title_elements = [name, location, material, orientation, breadth, height, qty, dist_y, dist_z]
-    title_result = [name, location, material, orientation, breadth, height, qty, dist_y, dist_z, mod_e,
+    title_elements = [name, location, material, angle, breadth, height, qty, dist_y, dist_z]
+    title_result = [name, location, material, angle, breadth, height, qty, dist_y, dist_z, mod_e,
                       area_f, ef,  efz, efz2, ebh3, dist_zna, sig_act]
     # title_result = [area_f, ef, efz, efz2, ebh3, dist_zna, sig_act]
     title_calculation = [name, section, moment, shear]
     list_location = ['bottom', 'side below WL', 'side above WL', 'deck', 'bulkhead', 'superstructure']
     list_material = ['Metal', 'FRP']
     list_material_calc = []
-    orientation_element = ['horizontal', 'vertical']
+    orientation_element = ['horizontal', 'vertical', 'angle']
     wd_material = {}
     wd_elements = {}
     wd_calculation = {}
