@@ -1,0 +1,17 @@
+mod_e = 'E, N/mm2'
+poisson = 'Poisson ratio *'
+name = 'Name'
+section = 'Section'
+height = 'h, mm'
+material = 'Material'
+length_b = 'Length, mm'
+breadth_b = 'Breadth, mm'
+stress_local = 'Local stress, N/mm2'
+end_conditions = 'End conditions'
+element_b = 'Element'
+calc_b = 'Calculation'
+stress_crit = 'Critical stress, N/mm2'
+stress_global = 'Global stress, N/mm2'
+stress_total = 'Total stress, N/mm2'
+
+list_material = ['Metal', 'FRP', 'Core']
