@@ -1,5 +1,7 @@
 mod_e = 'E, N/mm2'
+mod_g = 'G, N/mm2 *'
 poisson = 'Poisson ratio *'
+thickness = 'Thickness, mm'
 name = 'Name'
 section = 'Section'
 height = 'h, mm'
@@ -15,3 +17,4 @@ stress_global = 'Global stress, N/mm2'
 stress_total = 'Total stress, N/mm2'
 
 list_material = ['Metal', 'FRP', 'Core']
+list_end_conditions = ['fixed', 'free supported']

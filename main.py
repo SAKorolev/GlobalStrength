@@ -247,7 +247,7 @@ def update_tree_laminate():
         for i in lam[en_laminate_name.get()]:
             tree_laminate.insert("", index='end',
                                  values=(
-                                 lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]][thickness]))
+                                 lam[en_laminate_name.get()][i], mat[lam[en_laminate_name.get()][i]][s.thickness]))
 
 
 def update_listbox_materials(event=None):
@@ -338,7 +338,7 @@ def select_laminate(e):
         tree_laminate.delete(*tree_laminate.get_children())
         for j in lam[lb_lam1.get(i)]:
             tree_laminate.insert("", index='end',
-                        values=(lam[en_laminate_name.get()][j], mat[lam[en_laminate_name.get()][j]][thickness]))
+                        values=(lam[en_laminate_name.get()][j], mat[lam[en_laminate_name.get()][j]][s.thickness]))
 
 
 def current_name_laminate(event):
@@ -412,7 +412,7 @@ def down_layer_in_laminate():
 def calc_thickness_lam(lam_name):
     lam_thickness = 0
     for ply in lam[lam_name]:
-        lam_thickness += float(mat[lam[lam_name][ply]][thickness])
+        lam_thickness += float(mat[lam[lam_name][ply]][s.thickness])
     return lam_thickness
 
 
@@ -420,8 +420,8 @@ def calc_E_lam(lam_name):
     lam_thickness = 0
     lam_Ethickness = 0
     for ply in lam[lam_name]:
-        lam_thickness += float(mat[lam[lam_name][ply]][thickness])
-        lam_Ethickness += float(mat[lam[lam_name][ply]][thickness])*float(mat[lam[lam_name][ply]][s.mod_e])
+        lam_thickness += float(mat[lam[lam_name][ply]][s.thickness])
+        lam_Ethickness += float(mat[lam[lam_name][ply]][s.thickness])*float(mat[lam[lam_name][ply]][s.mod_e])
     return (lam_Ethickness/lam_thickness)
 
 
@@ -642,7 +642,7 @@ def create_results_dict():
                             results[name_calc][s.section][new_name][title] = 0
                     results[name_calc][s.section][new_name][s.material] = lam[name_lam][ply]
                     results[name_calc][s.section][new_name][s.mod_e] = float(mat[lam[name_lam][ply]][s.mod_e])
-                    results[name_calc][s.section][new_name][s.height] = float(mat[lam[name_lam][ply]][thickness])
+                    results[name_calc][s.section][new_name][s.height] = float(mat[lam[name_lam][ply]][s.thickness])
             else:
                 results[name_calc][s.section][elem_name] = {}
                 for title in title_result:
@@ -771,7 +771,7 @@ def add_buckling_widgets(row_number):
     wd_buckling_result[row_number] = {}
     for title in title_buckling_data:
         if title == s.end_conditions:
-            wd_buckling_data[row_number][title] = ttk.Combobox(frame_buckling_data_table, width=20, values=list_end_conditions)
+            wd_buckling_data[row_number][title] = ttk.Combobox(frame_buckling_data_table, width=20, values=s.list_end_conditions)
             wd_buckling_data[row_number][title].current(1)
             wd_buckling_data[row_number][title].grid(row=row_number, column=title_buckling_data.index(title))
             wd_buckling_data[row_number][title].bind('<<ComboboxSelected>>',
@@ -984,9 +984,9 @@ if __name__ == '__main__':
 
 
 
-    thickness = 'Thickness, mm'
 
-    mod_g = 'G, N/mm2 *'
+
+
     sig_comp = 'Sig c, N/mm2'
     sig_ten = 'Sig t, N/mm2'
     # orientation = 'Orientation'
@@ -1017,7 +1017,7 @@ if __name__ == '__main__':
     ei_na = 'ei_na'
     location = 'Location'
 
-    title_material = [s.material, s.name, s.mod_e,mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', thickness]
+    title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', s.thickness]
     title_elements = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z]
     title_result = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z, s.mod_e,
                       area_f, ef,  efz, efz2, ebh3, eibase, dist_zna, sig_act, sig_perm, cf]
@@ -1030,7 +1030,7 @@ if __name__ == '__main__':
     list_material_calc = []
     list_elements_calc = []
     list_calculation_calc = []
-    list_end_conditions = ['fixed', 'free supported']
+
     orientation_element = ['horizontal', 'vertical', 'angle']
     wd_material = {}
     wd_elements = {}
