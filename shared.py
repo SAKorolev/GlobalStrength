@@ -15,6 +15,11 @@ calc_b = 'Calculation'
 stress_crit = 'Critical stress, N/mm2'
 stress_global = 'Global stress, N/mm2'
 stress_total = 'Total stress, N/mm2'
+moment = 'Bending moment, Nmm'
+ei_na = 'ei_na'
+area_f = 'F, mm2'
+ef = 'EF, N'
+dist_zna = 'zna, mm'
 
 list_material = ['Metal', 'FRP', 'Core']
 list_end_conditions = ['fixed', 'free supported']

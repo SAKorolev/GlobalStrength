@@ -668,9 +668,9 @@ def calculate_gs():
 
     for name_calc in results:
         for elem_name in results[name_calc][s.section]:
-            results[name_calc][s.section][elem_name][area_f] = results[name_calc][s.section][elem_name][breadth] * results[name_calc][s.section][elem_name][s.height]
-            results[name_calc][s.section][elem_name][ef] = results[name_calc][s.section][elem_name][area_f] * results[name_calc][s.section][elem_name][s.mod_e]
-            results[name_calc][s.section][elem_name][efz] = results[name_calc][s.section][elem_name][ef] * results[name_calc][s.section][elem_name][dist_z]
+            results[name_calc][s.section][elem_name][s.area_f] = results[name_calc][s.section][elem_name][breadth] * results[name_calc][s.section][elem_name][s.height]
+            results[name_calc][s.section][elem_name][s.ef] = results[name_calc][s.section][elem_name][s.area_f] * results[name_calc][s.section][elem_name][s.mod_e]
+            results[name_calc][s.section][elem_name][efz] = results[name_calc][s.section][elem_name][s.ef] * results[name_calc][s.section][elem_name][dist_z]
             results[name_calc][s.section][elem_name][efz2] = results[name_calc][s.section][elem_name][efz] * results[name_calc][s.section][elem_name][dist_z]
             # results[name_calc][s.section][elem_name][ebh3] = results[name_calc][s.section][elem_name][s.mod_e] * \
             #                             results[name_calc][s.section][elem_name][breadth] * results[name_calc][s.section][elem_name][s.height] ** 3 / 12
@@ -684,24 +684,24 @@ def calculate_gs():
 
 
 
-        results[name_calc][sum_f] = calc_sum_column_elements(name_calc, area_f)
-        results[name_calc][sum_ef] = calc_sum_column_elements(name_calc, ef)
+        results[name_calc][sum_f] = calc_sum_column_elements(name_calc, s.area_f)
+        results[name_calc][sum_ef] = calc_sum_column_elements(name_calc, s.ef)
         results[name_calc][sum_efz] = calc_sum_column_elements(name_calc, efz)
         results[name_calc][sum_eibase] = calc_sum_column_elements(name_calc, eibase)
         results[name_calc][zna] = results[name_calc][sum_efz] / results[name_calc][sum_ef]
-        results[name_calc][ei_na] = 2*(results[name_calc][sum_eibase] - results[name_calc][zna] **2 * results[name_calc][sum_ef])
+        results[name_calc][s.ei_na] = 2*(results[name_calc][sum_eibase] - results[name_calc][zna] **2 * results[name_calc][sum_ef])
 
         for elem_name in results[name_calc][s.section]:
             if (results[name_calc][s.section][elem_name][dist_z] - results[name_calc][zna]) >= 0:
-                results[name_calc][s.section][elem_name][dist_zna] = results[name_calc][s.section][elem_name][dist_z] -\
+                results[name_calc][s.section][elem_name][s.dist_zna] = results[name_calc][s.section][elem_name][dist_z] -\
                     results[name_calc][zna] + results[name_calc][s.section][elem_name][breadth] / 2 * \
                     math.sin(results[name_calc][s.section][elem_name][angle]/180*3.1415)
             else:
-                results[name_calc][s.section][elem_name][dist_zna] = results[name_calc][s.section][elem_name][dist_z] - \
+                results[name_calc][s.section][elem_name][s.dist_zna] = results[name_calc][s.section][elem_name][dist_z] - \
                     results[name_calc][zna] - results[name_calc][s.section][elem_name][breadth] / 2 * \
                     math.sin(results[name_calc][s.section][elem_name][angle]/180*3.1415)
-            results[name_calc][s.section][elem_name][sig_act] = calculations[name_calc][moment] / \
-                    results[name_calc][ei_na] * results[name_calc][s.section][elem_name][dist_zna] * \
+            results[name_calc][s.section][elem_name][sig_act] = calculations[name_calc][s.moment] / \
+                    results[name_calc][s.ei_na] * results[name_calc][s.section][elem_name][s.dist_zna] * \
                                                               results[name_calc][s.section][elem_name][s.mod_e]
             results[name_calc][s.section][elem_name][cf] = results[name_calc][s.section][elem_name][sig_perm] / \
                                                          results[name_calc][s.section][elem_name][sig_act]
@@ -738,7 +738,7 @@ def show_result(event=None):
             en_result_zna.delete(0, tk.END)
             en_result_zna.insert(0, f'{results[name_calc][zna]:.2f}')
             en_result_ei_na.delete(0, tk.END)
-            en_result_ei_na.insert(0, f'{results[name_calc][ei_na]:.2e}')
+            en_result_ei_na.insert(0, f'{results[name_calc][s.ei_na]:.2e}')
             tree_result.delete(*tree_result.get_children())
             for name_elem in results[name_calc][s.section]:
                 tree_result.insert("", index='end',
@@ -750,12 +750,12 @@ def show_result(event=None):
                             f"{results[name_calc][s.section][name_elem][dist_y]:.2f}",
                             f"{results[name_calc][s.section][name_elem][dist_z]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.mod_e]:.2e}",
-                            f"{results[name_calc][s.section][name_elem][area_f]:.2f}",
-                            f"{results[name_calc][s.section][name_elem][ef]:.2e}",
+                            f"{results[name_calc][s.section][name_elem][s.area_f]:.2f}",
+                            f"{results[name_calc][s.section][name_elem][s.ef]:.2e}",
                             f"{results[name_calc][s.section][name_elem][efz]:.2e}",
                             f"{results[name_calc][s.section][name_elem][efz2]:.2e}",
                             f"{results[name_calc][s.section][name_elem][ebh3]:.2e}",
-                            f"{results[name_calc][s.section][name_elem][dist_zna]:.2f}",
+                            f"{results[name_calc][s.section][name_elem][s.dist_zna]:.2f}",
                             f"{results[name_calc][s.section][name_elem][sig_act]:.2f}",
                             ))
 
@@ -882,18 +882,22 @@ def create_list_elements_buckling(event, i):
 def calculate_buckling():
     create_sections_dict()
     create_calculation_dict()
-    buckling_result_dict = calc_buckling.calc_buckling(buckling_data_dict, mat, sections, calculations, lam)
+    buckling_result_dict = calc_buckling.calc_buckling(buckling_data_dict, mat, sections, calculations, lam, results)
     print(buckling_result_dict)
     for row in wd_buckling_result:
         name_buckling = wd_buckling_result[row][s.name].cget('text')
         print(name_buckling)
         if s.stress_crit in buckling_result_dict[name_buckling].keys():
             wd_buckling_result[row][s.stress_crit].configure(text=buckling_result_dict[name_buckling][s.stress_crit])
+        if s.stress_global in buckling_result_dict[name_buckling].keys():
+            wd_buckling_result[row][s.stress_global].configure(text=buckling_result_dict[name_buckling][s.stress_global])
+        wd_buckling_result[row][s.stress_local].configure(text=buckling_data_dict[name_buckling][s.stress_local])
+        # wd_buckling_result[row][s.stress_total].configure(text=buckling_data_dict[row][s.stress_local])
 
 
 def export_results():
     result_out.calculation_results_to_xls(results, title_result, s.section, title_exclude_result, sum_f, sum_ef, sum_efz,
-                                          sum_eibase, zna, ei_na, moment, shear)
+                                          sum_eibase, zna, s.ei_na, s.moment, shear)
 
 
 def export_materials():
@@ -996,17 +1000,16 @@ if __name__ == '__main__':
 
     dist_z = 'z, mm'
     dist_y = 'y, mm'
-    area_f = 'F, mm2'
-    ef = 'EF, N'
+
     efz = 'EFz, Nmm'
     efz2 = 'EFz2, Nmm2'
     ebh3 = 'Eh3/12, Nmm2'
     eibase = 'EI base, Nmm2'
     sig_perm = 'Sig perm., N/mm2'
     cf = 'CF'
-    dist_zna = 'zna, mm'
+
     sig_act = 'Sig, N/mm2'
-    moment = 'Bending moment, Nmm'
+
     shear = 'Shear force, N'
 
     sum_f = 'Summa F, mm2'
@@ -1020,9 +1023,9 @@ if __name__ == '__main__':
     title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', s.thickness]
     title_elements = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z]
     title_result = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z, s.mod_e,
-                      area_f, ef,  efz, efz2, ebh3, eibase, dist_zna, sig_act, sig_perm, cf]
+                      s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, cf]
     title_exclude_result = [qty, dist_y]
-    title_calculation = [s.name, s.section, moment, shear]
+    title_calculation = [s.name, s.section, s.moment, shear]
     title_buckling_data = [s.name, s.length_b, s.breadth_b, s.calc_b, s.element_b, s.material, s.end_conditions, s.stress_local]
     title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total, cf]
     list_location = ['bottom', 'side below WL', 'side above WL','open deck', 'deck', 'bulkhead', 'superstructure']
@@ -1315,12 +1318,12 @@ if __name__ == '__main__':
     tree_result.heading("#6", text=dist_y)
     tree_result.heading("#7", text=dist_z)
     tree_result.heading("#8", text=s.mod_e)
-    tree_result.heading("#9", text=area_f)
-    tree_result.heading("#10", text=ef)
+    tree_result.heading("#9", text=s.area_f)
+    tree_result.heading("#10", text=s.ef)
     tree_result.heading("#11", text=efz)
     tree_result.heading("#12", text=efz2)
     tree_result.heading("#13", text=ebh3)
-    tree_result.heading("#14", text=dist_zna)
+    tree_result.heading("#14", text=s.dist_zna)
     tree_result.heading("#15", text=sig_act)
     tree_result.grid(row=0, column=0, sticky='we')
     tree_result.config(yscrollcommand=sb_result.set)

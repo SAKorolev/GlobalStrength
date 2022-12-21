@@ -1,25 +1,27 @@
 import shared as s
 from math import pi
 
-def calc_buckling(buckling_data_dict, materials, sections, calculations, laminates):
-    results = {}
+def calc_buckling(buckling_data_dict, materials, sections, calculations, laminates, results):
+    results_buck = {}
     for name_buckling in buckling_data_dict:
-        results[name_buckling] = {}
+        results_buck[name_buckling] = {}
         name_material = buckling_data_dict[name_buckling][s.material]
         if name_material in materials.keys() and materials[name_material][s.material] == s.list_material[0]:
-           results[name_buckling][s.stress_crit] = calc_buckling_metal(name_buckling, buckling_data_dict, materials, sections, calculations)
+           results_buck[name_buckling][s.stress_crit] = calc_buckling_metal(name_buckling, buckling_data_dict, materials, sections, calculations)
         else:
             core = False
             for ply in laminates[name_material]:
                 if materials[laminates[name_material][ply]][s.material] == s. list_material[2]:
                     core = True
             if core:
-                results[name_buckling][s.stress_crit] = calc_buckling_sandwich(name_buckling,
+                results_buck[name_buckling][s.stress_crit] = calc_buckling_sandwich(name_buckling,
                                                     buckling_data_dict, materials, sections, calculations, laminates)
             else:
-                results[name_buckling][s.stress_crit] = calc_buckling_single(name_buckling,
+                results_buck[name_buckling][s.stress_crit] = calc_buckling_single(name_buckling,
                                                     buckling_data_dict, materials, sections, calculations,laminates)
-    return results
+        results_buck[name_buckling][s.stress_global] = calc_buckling_gs(name_buckling, buckling_data_dict, materials,
+                                                                         sections, calculations, results)
+    return results_buck
 
 
 def calc_buckling_metal(name_buckling, buckling_data_dict, materials, sections, calculations):
@@ -135,3 +137,21 @@ def core_parameter(name_lam, materials, laminates, par1):
         name_ply = laminates[name_lam][ply]
         if materials[name_ply][s.material] == s.list_material[2]:
             return float(materials[name_ply][par1])
+
+
+def calc_buckling_gs(name_buckling, buckling_data_dict, materials, sections, calculations, results):
+    name_calc = buckling_data_dict[name_buckling][s.calc_b]
+    name_element = buckling_data_dict[name_buckling][s.element_b]
+    M = results[name_calc][s.moment]
+    EI = results[name_calc][s.ei_na]
+    F = 0
+    EF = 0
+    z = 0
+    for row in results[name_calc][s.section]:
+        if results[name_calc][s.section][row][s.name] == name_element:
+            F += results[name_calc][s.section][row][s.area_f]
+            EF += results[name_calc][s.section][row][s.ef]
+            z = results[name_calc][s.section][row][s.dist_zna]
+    E = EF / F
+    sigma_gs = M*z*E/EI
+    return sigma_gs
