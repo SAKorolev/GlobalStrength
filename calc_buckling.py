@@ -43,7 +43,7 @@ def calc_buckling_metal(name_buckling, buckling_data_dict, materials, sections, 
     name_calculation = buckling_data_dict[name_buckling][s.calc_b]
     name_section = calculations[name_calculation][s.section]
     t = sections[name_section][buckling_data_dict[name_buckling][s.element_b]][s.height]
-    sigma_crit = k_buck*E*pi**2/(12*(1-mu**2))*(t/b)**2
+    sigma_crit = round(k_buck*E*pi**2/(12*(1-mu**2))*(t/b)**2, 2)
     return sigma_crit
 
 
@@ -85,7 +85,7 @@ def calc_buckling_sandwich(name_buckling, buckling_data_dict, materials, section
     print('k ', k)
     print('mt ', mt)
 
-    sigma_crit = T / (2*d)
+    sigma_crit = round(T / (2*d), 2)
     return sigma_crit
 
 
@@ -103,10 +103,11 @@ def calc_buckling_single(name_buckling, buckling_data_dict, materials, sections,
     if buckling_data_dict[name_buckling][s.end_conditions] == s.list_end_conditions[1]:
         B = 1000000000000
         for m in range(1, 5):
-            B = min(B, ((m * b / a)**2 + (a / m / b)**2 + 2*(poisson+2*G/E*(1-poisson**2)))*pi / (12*(1-poisson**2)))
+            B = min(B, ((m * b / a)**2 + (a / m / b)**2 + 2*(poisson+2*G/E*(1-poisson**2)))*pi**2 / (12*(1-poisson**2)))
+            print(B)
     else:
         B = 0
-    sigma_crit = E * B * (t / b) ** 2
+    sigma_crit = round(E * B * (t / b) ** 2, 2)
     print('E ', E)
     print('t ', t)
     print('B ', B)
@@ -153,5 +154,5 @@ def calc_buckling_gs(name_buckling, buckling_data_dict, materials, sections, cal
             EF += results[name_calc][s.section][row][s.ef]
             z = results[name_calc][s.section][row][s.dist_zna]
     E = EF / F
-    sigma_gs = M*z*E/EI
+    sigma_gs = round(M*z*E/EI, 2)
     return sigma_gs

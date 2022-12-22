@@ -703,7 +703,7 @@ def calculate_gs():
             results[name_calc][s.section][elem_name][sig_act] = calculations[name_calc][s.moment] / \
                     results[name_calc][s.ei_na] * results[name_calc][s.section][elem_name][s.dist_zna] * \
                                                               results[name_calc][s.section][elem_name][s.mod_e]
-            results[name_calc][s.section][elem_name][cf] = results[name_calc][s.section][elem_name][sig_perm] / \
+            results[name_calc][s.section][elem_name][s.cf] = results[name_calc][s.section][elem_name][sig_perm] / \
                                                          results[name_calc][s.section][elem_name][sig_act]
     print(results)
 
@@ -817,11 +817,8 @@ def add_buckling_widgets(row_number):
 
 def add_buckling_dict(row_number):
     buckling_data_dict[wd_buckling_data[row_number][s.name].get()] = {}
-    # buckling_result_dict[wd_buckling_result[row_number][s.name].get()] = {}
     for title in title_buckling_data:
         buckling_data_dict[wd_buckling_data[row_number][s.name].get()][title] = wd_buckling_data[row_number][title].get()
-    # for title in title_buckling_result:
-        # buckling_result_dict[wd_buckling_result[row_number][s.name].get()][title] = wd_buckling_result[row_number][title].get()
 
 
 def del_buckling():
@@ -836,7 +833,6 @@ def del_buckling():
                 widget1.destroy()
 
     children = frame_buckling_result_table.winfo_children()
-    # del buckling_result_dict[wd_buckling_result[i][s.name].get()]
     del wd_buckling_result[i]
     for widget1 in children:
         if int(widget1.grid_info()['row']) == i:
@@ -891,8 +887,15 @@ def calculate_buckling():
             wd_buckling_result[row][s.stress_crit].configure(text=buckling_result_dict[name_buckling][s.stress_crit])
         if s.stress_global in buckling_result_dict[name_buckling].keys():
             wd_buckling_result[row][s.stress_global].configure(text=buckling_result_dict[name_buckling][s.stress_global])
-        wd_buckling_result[row][s.stress_local].configure(text=buckling_data_dict[name_buckling][s.stress_local])
-        # wd_buckling_result[row][s.stress_total].configure(text=buckling_data_dict[row][s.stress_local])
+        buckling_result_dict[name_buckling][s.stress_local] = round(float(buckling_data_dict[name_buckling][s.stress_local]),2)
+        wd_buckling_result[row][s.stress_local].configure(text=buckling_result_dict[name_buckling][s.stress_local])
+        buckling_result_dict[name_buckling][s.stress_total] = round(buckling_result_dict[name_buckling][s.stress_local] + buckling_result_dict[name_buckling][s.stress_global], 2)
+        wd_buckling_result[row][s.stress_total].configure(text=buckling_result_dict[name_buckling][s.stress_total])
+        if buckling_result_dict[name_buckling][s.stress_total] < 0:
+            buckling_result_dict[name_buckling][s.cf] = abs(round(buckling_result_dict[name_buckling][s.stress_crit] / buckling_result_dict[name_buckling][s.stress_total], 2))
+        else:
+            buckling_result_dict[name_buckling][s.cf] = 0
+        wd_buckling_result[row][s.cf].configure(text=buckling_result_dict[name_buckling][s.cf])
 
 
 def export_results():
@@ -1006,7 +1009,7 @@ if __name__ == '__main__':
     ebh3 = 'Eh3/12, Nmm2'
     eibase = 'EI base, Nmm2'
     sig_perm = 'Sig perm., N/mm2'
-    cf = 'CF'
+
 
     sig_act = 'Sig, N/mm2'
 
@@ -1023,11 +1026,11 @@ if __name__ == '__main__':
     title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', s.thickness]
     title_elements = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z]
     title_result = [s.name, location, s.material, angle, breadth, s.height, qty, dist_y, dist_z, s.mod_e,
-                      s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, cf]
+                      s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, s.cf]
     title_exclude_result = [qty, dist_y]
     title_calculation = [s.name, s.section, s.moment, shear]
     title_buckling_data = [s.name, s.length_b, s.breadth_b, s.calc_b, s.element_b, s.material, s.end_conditions, s.stress_local]
-    title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total, cf]
+    title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total,s.cf]
     list_location = ['bottom', 'side below WL', 'side above WL','open deck', 'deck', 'bulkhead', 'superstructure']
 
     list_material_calc = []
@@ -1047,7 +1050,7 @@ if __name__ == '__main__':
     calculations = {}
     results = {}
     buckling_data_dict = {}
-    buckling_result_dict = {}
+
     current_name = ''
     id_item = 0
 
@@ -1354,6 +1357,7 @@ if __name__ == '__main__':
 
     frame_canvas_calculation = tk.Frame(frame_calculation_data)
     frame_canvas_calculation.pack(side="top", fill='both')
+    tk.Label(frame_calculation_data, text='Moment is positive for hogging').pack(side='bottom', anchor='w')
     canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=550)
     frame_calculation = tk.Frame(canvas_calculation)
     scroll_calculation_vertical = tk.Scrollbar(frame_canvas_calculation, orient="vertical", command=canvas_calculation.yview)
@@ -1407,5 +1411,9 @@ if __name__ == '__main__':
     for title in title_buckling_result:
         tk.Label(frame_buckling_result_table, anchor='w', width= 20, height=1, relief='solid',
              bd=0.5, text=title).grid(row=0, column=title_buckling_result.index(title))
+
+    frame_buckling_result_info = tk.Frame(frame_buckling_result)
+    frame_buckling_result_info.pack(side='bottom', fill='both')
+    tk.Label(frame_buckling_result_info, text='Normal stresses are positive for tensile').grid(row=0, column=0, padx=5, pady=5)
 
     root.mainloop()
