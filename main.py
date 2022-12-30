@@ -597,16 +597,17 @@ def add_calculation():
     wd_calculation[row_number] = {}
     for title in title_calculation:
         if title == s.section:
-            wd_calculation[row_number][title] = ttk.Combobox(frame_calculation, width=15)
+            wd_calculation[row_number][title] = ttk.Combobox(frame_calculation, width=19)
             # wd_calculation[row_number][title].current(0)
             wd_calculation[row_number][title].grid(row=row_number, column=title_calculation.index(title))
         else:
-            wd_calculation[row_number][title] = tk.Entry(frame_calculation, width=15)
-            wd_calculation[row_number][title].insert(0, '0.00')
+            wd_calculation[row_number][title] = tk.Entry(frame_calculation, width=19)
+            wd_calculation[row_number][title].insert(0, '0')
             wd_calculation[row_number][title].grid(row=row_number, column=title_calculation.index(title), sticky='we')
+            wd_calculation[row_number][title].bind('<FocusIn>', show_result)
     wd_calculation[row_number][s.name].delete(0, tk.END)
     wd_calculation[row_number][s.name].insert(0, 'calculation ' + str(row_number))
-    wd_calculation[row_number][s.name].bind('<FocusIn>', show_result)
+
     update_listbox_calculation()
 
 
@@ -752,8 +753,13 @@ def calculate_gs():
                                                               results[name_calc][s.section][elem_name][s.mod_e]
             results[name_calc][s.section][elem_name][s.cf] = results[name_calc][s.section][elem_name][sig_perm] / \
                                                          results[name_calc][s.section][elem_name][sig_act]
-    print(results)
-    calc_shear_srtess.calc_shear_stress(results, mat, zca=443)
+
+        zca = float(calculations[name_calc][s.zca])
+        shear_results = calc_shear_srtess.calc_shear_stress(name_calc, results, mat, zca)
+        results[name_calc][s.z_shear_max] = shear_results[1]
+        results[name_calc][s.shear_max] = shear_results[0]
+        results[name_calc][s.shear_ca] = shear_results[2]
+        results[name_calc][s.zca] = zca
 
 
 def factor_permissible_normal_stress(location_l):
@@ -780,13 +786,20 @@ def show_result(event=None):
         if widget in children:
             i = widget.grid_info()['row']
             name_calc = wd_calculation[i][s.name].get()
-            print(name_calc)
             en_result_name.delete(0, tk.END)
             en_result_name.insert(0, name_calc)
             en_result_zna.delete(0, tk.END)
             en_result_zna.insert(0, f'{results[name_calc][s.zna]:.2f}')
             en_result_ei_na.delete(0, tk.END)
             en_result_ei_na.insert(0, f'{results[name_calc][s.ei_na]:.2e}')
+            en_result_z_shear_max.delete(0, tk.END)
+            en_result_z_shear_max.insert(0, f'{results[name_calc][s.z_shear_max]:.2f}')
+            en_result_shear_max.delete(0, tk.END)
+            en_result_shear_max.insert(0, f'{results[name_calc][s.shear_max]:.2f}')
+            en_result_zca_shear.delete(0, tk.END)
+            en_result_zca_shear.insert(0, f'{results[name_calc][s.zca]:.2f}')
+            en_result_shear_ca.delete(0, tk.END)
+            en_result_shear_ca.insert(0, f'{results[name_calc][s.shear_ca]:.2f}')
             tree_result.delete(*tree_result.get_children())
             for name_elem in results[name_calc][s.section]:
                 tree_result.insert("", index='end',
@@ -794,7 +807,6 @@ def show_result(event=None):
                             results[name_calc][s.section][name_elem][s.material],
                             f"{results[name_calc][s.section][name_elem][s.breadth]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.height]:.2f}",
-                            # f"{results[name_calc][s.section][name_elem][qty]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.dist_y]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.dist_z]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.mod_e]:.2e}",
@@ -1076,7 +1088,7 @@ if __name__ == '__main__':
     title_result = [s.name, location, s.material, s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z,s.mod_e,
                       s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, s.cf]
     title_exclude_result = [s.dist_y]
-    title_calculation = [s.name, s.section, s.moment, s.shear]
+    title_calculation = [s.name, s.section, s.moment, s.shear, s.zca]
     title_buckling_data = [s.name, s.length_b, s.breadth_b, s.calc_b, s.element_b, s.material, s.end_conditions, s.stress_local]
     title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total,s.cf]
     list_location = ['bottom', 'side below WL', 'side above WL','open deck', 'deck', 'bulkhead', 'superstructure']
@@ -1382,17 +1394,38 @@ if __name__ == '__main__':
         # general results
     frame_calculation_result = tk.LabelFrame(sheet_calculation, text='Results')
     frame_calculation_result.grid(row=0, column=1, sticky='nwes')
+
     tk.Label(frame_calculation_result, text='Calculation label :', anchor='w').grid(row=0, column=0, sticky='w')
     en_result_name = tk.Entry(frame_calculation_result)
     en_result_name.grid(row=0, column=1, padx=10, pady=5)
+
     tk.Label(frame_calculation_result, text='Position of neutral axis above base, z0, mm', anchor='w').grid(row=1,
                                                                                                 column=0, sticky='w')
     en_result_zna = tk.Entry(frame_calculation_result)
     en_result_zna.grid(row=1, column=1, padx=10, pady=5)
+
     tk.Label(frame_calculation_result, text='Stiffness EIx about neutral axis, N*mm2', anchor='w').grid(row=2,
                                                                                                 column=0, sticky='w')
     en_result_ei_na = tk.Entry(frame_calculation_result)
     en_result_ei_na.grid(row=2, column=1, padx=10, pady=5)
+
+    tk.Label(frame_calculation_result, text='Position of the section where is max shear stress, mm', anchor='w'). \
+        grid(row=3, column=0, sticky='w')
+    en_result_z_shear_max = tk.Entry(frame_calculation_result)
+    en_result_z_shear_max.grid(row=3, column=1, padx=10, pady=5)
+
+    tk.Label(frame_calculation_result, text='Maximum shear stress, N/mm2', anchor='w').grid(row=4, column=0, sticky='w')
+    en_result_shear_max = tk.Entry(frame_calculation_result)
+    en_result_shear_max.grid(row=4, column=1, padx=10, pady=5)
+
+    tk.Label(frame_calculation_result, text='User defined position of the section for shear stress Zca, mm', anchor='w'). \
+        grid(row=5, column=0, sticky='w')
+    en_result_zca_shear = tk.Entry(frame_calculation_result)
+    en_result_zca_shear.grid(row=5, column=1, padx=10, pady=5)
+
+    tk.Label(frame_calculation_result, text='Shear stress at Zca, N/mm2', anchor='w').grid(row=6, column=0, sticky='w')
+    en_result_shear_ca = tk.Entry(frame_calculation_result)
+    en_result_shear_ca.grid(row=6, column=1, padx=10, pady=5)
 
         # calculation data
     frame_calculation_data = tk.LabelFrame(sheet_calculation, text='Data')
@@ -1405,7 +1438,7 @@ if __name__ == '__main__':
     frame_canvas_calculation = tk.Frame(frame_calculation_data)
     frame_canvas_calculation.pack(side="top", fill='both')
     tk.Label(frame_calculation_data, text='Moment is positive for hogging').pack(side='bottom', anchor='w')
-    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=550)
+    canvas_calculation = tk.Canvas(frame_canvas_calculation, borderwidth=0, width=700)
     frame_calculation = tk.Frame(canvas_calculation)
     scroll_calculation_vertical = tk.Scrollbar(frame_canvas_calculation, orient="vertical", command=canvas_calculation.yview)
     scroll_calculation_horizontal = tk.Scrollbar(frame_canvas_calculation, orient="horizontal", command=canvas_calculation.xview)
@@ -1427,7 +1460,7 @@ if __name__ == '__main__':
         tk.Label(frame_calculation, anchor='w', width=19, height=1, relief='solid',
                  bd=0.5, text=title).grid(row=0, column=title_calculation.index(title))
 
-        # buckling sheet
+    # buckling sheet
     sheet_buckling.rowconfigure(1, minsize=250)
     sheet_buckling.rowconfigure(0, minsize=250)
     frame_buckling_data = tk.LabelFrame(sheet_buckling, text='Data')

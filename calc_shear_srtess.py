@@ -1,30 +1,31 @@
 import shared as s
 
 
-def calc_shear_stress(results, mat, zca):
-
-    for name_calculation in results:
-        q = results[name_calculation][s.shear]
-        ei = results[name_calculation][s.ei_na]
-        fze = calc_first_moment(name_calculation, results, mat, zca)
-        b = calc_breadth(name_calculation, results, zca)
+def calc_shear_stress(name_calculation, results, mat, zca):
+    q = results[name_calculation][s.shear]
+    ei = results[name_calculation][s.ei_na]
+    fze = calc_first_moment(name_calculation, results, mat, zca)
+    b = calc_breadth(name_calculation, results, zca)
+    if b > 0:
         shear_stress_zca = q * fze / (ei * b)
+    else:
+        shear_stress_zca = 0
+    shear_stress = 0
+    z_max_shear = 0
+    zmax = maximum_z(results, name_calculation)
+    zmin = minimum_z(results, name_calculation)
+    z = zmin
+    while z < zmax:
+        fze = calc_first_moment(name_calculation, results, mat, z)
+        b = calc_breadth(name_calculation, results, z)
+        if b > 0:
+            if shear_stress < q*fze/(ei*b):
+                shear_stress = q*fze/(ei*b)
+                z_max_shear = z
+        z += 1
+    print('shear = ', shear_stress, z_max_shear, shear_stress_zca)
+    return shear_stress, z_max_shear, shear_stress_zca
 
-        shear_stress = 0
-        z_max_shear = 0
-        zmax = maximum_z(results, name_calculation)
-        zmin = minimum_z(results, name_calculation)
-        z = zmin
-        while z < zmax:
-            fze = calc_first_moment(name_calculation, results, mat, z)
-            b = calc_breadth(name_calculation, results, z)
-            if b > 0:
-                if shear_stress < q*fze/(ei*b):
-                    shear_stress = q*fze/(ei*b)
-                    z_max_shear = z
-            z += 1
-
-        print('shear = ', shear_stress, z_max_shear, shear_stress_zca)
 
 def calc_first_moment(name_calculation, results, mat, zca):
     first_moment = 0
