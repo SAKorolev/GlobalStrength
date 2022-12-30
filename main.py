@@ -495,13 +495,22 @@ def add_elements():
                 wd_elements[name_section][row_number][title].bind('<Return>',
                                                     lambda e, ns = name_section, i=row_number: change_element_name(e, ns, i))
                 wd_elements[name_section][row_number][s.name].bind('<FocusIn>', lambda e, ns = name_section, i=row_number: current_name_element(e, ns, i))
+            elif title in [s.z1, s.y1, s.z2, s.y2]:
+                wd_elements[name_section][row_number][title] = tk.Entry(frame_elements, width=12)
+                wd_elements[name_section][row_number][title].insert(0, f'{0:.3f}')
+                wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
+                wd_elements[name_section][row_number][title].bind('<FocusOut>',
+                                                    lambda e, ns = name_section, i=row_number: change_element_data(e, ns, i))
+                wd_elements[name_section][row_number][title].bind('<Return>',
+                                                                  lambda e, ns=name_section,
+                                                                         i=row_number: change_element_data(e, ns, i))
             else:
                 wd_elements[name_section][row_number][title] = tk.Entry(frame_elements, width=12)
                 wd_elements[name_section][row_number][title].insert(0, f'{0:.3f}')
                 wd_elements[name_section][row_number][title].grid(row=row_number, column=title_elements.index(title), sticky='we')
 
-        wd_elements[name_section][row_number][qty].delete(0, tk.END)
-        wd_elements[name_section][row_number][qty].insert(0, f'{1:.3f}')
+        # wd_elements[name_section][row_number][qty].delete(0, tk.END)
+        # wd_elements[name_section][row_number][qty].insert(0, f'{1:.3f}')
 
 
 def del_elements():
@@ -528,6 +537,28 @@ def change_element_name(event, ns, i):
             if wd_elements[ns][i][s.name].get() == wd_elements[ns][j][s.name].get() and i != j:
                 wd_elements[ns][i][s.name].delete(0, tk.END)
                 wd_elements[ns][i][s.name].insert(0, current_name)
+
+
+def change_element_data(event, ns, i):
+    z1 = float(wd_elements[ns][i][s.z1].get())
+    z2 = float(wd_elements[ns][i][s.z2].get())
+    y1 = float(wd_elements[ns][i][s.y1].get())
+    y2 = float(wd_elements[ns][i][s.y2].get())
+    b = round(((z2-z1)**2+(y2-y1)**2)**0.5)
+    wd_elements[ns][i][s.breadth].delete(0, tk.END)
+    wd_elements[ns][i][s.breadth].insert(0, b)
+    if y1 != y2:
+        angle = round(math.degrees(math.atan((z2 - z1)/(y2 - y1))))
+    else:
+        angle = 90
+    wd_elements[ns][i][s.angle].delete(0, tk.END)
+    wd_elements[ns][i][s.angle].insert(0, angle)
+    z = abs(round((z2+z1)/2))
+    wd_elements[ns][i][s.dist_z].delete(0, tk.END)
+    wd_elements[ns][i][s.dist_z].insert(0, z)
+    y = abs(round((y2 + y1) / 2))
+    wd_elements[ns][i][s.dist_y].delete(0, tk.END)
+    wd_elements[ns][i][s.dist_y].insert(0, y)
 
 
 def change_material_str(e, i, t):
@@ -598,6 +629,22 @@ def create_sections_dict():
             elem_name = wd_elements[name_section][key][s.name].get()
             sections[name_section][elem_name] = {}
             for title in title_elements:
+                # if title == s.z1:
+                #     z11 = round(float(wd_elements[name_section][key][s.dist_z].get())-float(wd_elements[name_section][key][s.breadth].get())/2*math.sin(math.radians(float(wd_elements[name_section][key][s.angle].get()))))
+                #     wd_elements[name_section][key][title].delete(0, tk.END)
+                #     wd_elements[name_section][key][title].insert(0, z11)
+                # if title == s.z2:
+                #     z21 = round(float(wd_elements[name_section][key][s.dist_z].get())+float(wd_elements[name_section][key][s.breadth].get())/2*math.sin(math.radians(float(wd_elements[name_section][key][s.angle].get()))))
+                #     wd_elements[name_section][key][title].delete(0, tk.END)
+                #     wd_elements[name_section][key][title].insert(0, z21)
+                # if title == s.y1:
+                #     y11 = round(float(wd_elements[name_section][key][s.dist_y].get())-float(wd_elements[name_section][key][s.breadth].get())/2*math.cos(math.radians(float(wd_elements[name_section][key][s.angle].get()))))
+                #     wd_elements[name_section][key][title].delete(0, tk.END)
+                #     wd_elements[name_section][key][title].insert(0, y11)
+                # if title == s.y2:
+                #     y21 = round(float(wd_elements[name_section][key][s.dist_y].get())+float(wd_elements[name_section][key][s.breadth].get())/2*math.cos(math.radians(float(wd_elements[name_section][key][s.angle].get()))))
+                #     wd_elements[name_section][key][title].delete(0, tk.END)
+                #     wd_elements[name_section][key][title].insert(0, y21)
                 if is_digit(wd_elements[name_section][key][title].get()):
                     sections[name_section][elem_name][title] = float(wd_elements[name_section][key][title].get())
                 else:
@@ -706,7 +753,7 @@ def calculate_gs():
             results[name_calc][s.section][elem_name][s.cf] = results[name_calc][s.section][elem_name][sig_perm] / \
                                                          results[name_calc][s.section][elem_name][sig_act]
     print(results)
-    calc_shear_srtess.calc_first_moment(results, mat, zca=750)
+    calc_shear_srtess.calc_shear_stress(results, mat, zca=443)
 
 
 def factor_permissible_normal_stress(location_l):
@@ -747,7 +794,7 @@ def show_result(event=None):
                             results[name_calc][s.section][name_elem][s.material],
                             f"{results[name_calc][s.section][name_elem][s.breadth]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.height]:.2f}",
-                            f"{results[name_calc][s.section][name_elem][qty]:.2f}",
+                            # f"{results[name_calc][s.section][name_elem][qty]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.dist_y]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.dist_z]:.2f}",
                             f"{results[name_calc][s.section][name_elem][s.mod_e]:.2e}",
@@ -901,7 +948,7 @@ def calculate_buckling():
 
 def export_results():
     result_out.calculation_results_to_xls(results, title_result, s.section, title_exclude_result, sum_f, sum_ef, sum_efz,
-                                          sum_eibase, s.zna, s.ei_na, s.moment, shear)
+                                          sum_eibase, s.zna, s.ei_na, s.moment, s.shear)
 
 
 def export_materials():
@@ -999,7 +1046,7 @@ if __name__ == '__main__':
     sig_ten = 'Sig t, N/mm2'
     # orientation = 'Orientation'
 
-    qty = 'Qty'
+    # qty = 'Qty'
 
 
 
@@ -1014,7 +1061,7 @@ if __name__ == '__main__':
 
     sig_act = 'Sig, N/mm2'
 
-    shear = 'Shear force, N'
+
 
     sum_f = 'Summa F, mm2'
     sum_ef = 'Summa EF, N'
@@ -1025,11 +1072,11 @@ if __name__ == '__main__':
     location = 'Location'
 
     title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', s.thickness]
-    title_elements = [s.name, location, s.material, s.angle,s.breadth, s.height, qty, s.dist_y,s.dist_z]
-    title_result = [s.name, location, s.material, s.angle,s.breadth, s.height, qty, s.dist_y, s.dist_z, s.mod_e,
+    title_elements = [s.name, location, s.material,s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z]
+    title_result = [s.name, location, s.material, s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z,s.mod_e,
                       s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, s.cf]
-    title_exclude_result = [qty, s.dist_y]
-    title_calculation = [s.name, s.section, s.moment, shear]
+    title_exclude_result = [s.dist_y]
+    title_calculation = [s.name, s.section, s.moment, s.shear]
     title_buckling_data = [s.name, s.length_b, s.breadth_b, s.calc_b, s.element_b, s.material, s.end_conditions, s.stress_local]
     title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total,s.cf]
     list_location = ['bottom', 'side below WL', 'side above WL','open deck', 'deck', 'bulkhead', 'superstructure']
@@ -1318,17 +1365,16 @@ if __name__ == '__main__':
     tree_result.heading("#2", text=s.material)
     tree_result.heading("#3", text=s.breadth)
     tree_result.heading("#4", text=s.height)
-    tree_result.heading("#5", text=qty)
-    tree_result.heading("#6", text=s.dist_y)
-    tree_result.heading("#7", text=s.dist_z)
-    tree_result.heading("#8", text=s.mod_e)
-    tree_result.heading("#9", text=s.area_f)
-    tree_result.heading("#10", text=s.ef)
-    tree_result.heading("#11", text=efz)
-    tree_result.heading("#12", text=efz2)
-    tree_result.heading("#13", text=ebh3)
-    tree_result.heading("#14", text=s.dist_zna)
-    tree_result.heading("#15", text=sig_act)
+    tree_result.heading("#5", text=s.dist_y)
+    tree_result.heading("#6", text=s.dist_z)
+    tree_result.heading("#7", text=s.mod_e)
+    tree_result.heading("#8", text=s.area_f)
+    tree_result.heading("#9", text=s.ef)
+    tree_result.heading("#10", text=efz)
+    tree_result.heading("#11", text=efz2)
+    tree_result.heading("#12", text=ebh3)
+    tree_result.heading("#13", text=s.dist_zna)
+    tree_result.heading("#14", text=sig_act)
     tree_result.grid(row=0, column=0, sticky='we')
     tree_result.config(yscrollcommand=sb_result.set)
     sb_result.config(command=tree_result.yview)
