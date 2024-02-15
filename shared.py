@@ -39,3 +39,4 @@ zna = 'zna'
 
 list_material = ['Metal', 'FRP', 'Core']
 list_end_conditions = ['fixed', 'free supported']
+list_core = ['Core', 'Core(L)', 'Core(B,H)']

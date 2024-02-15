@@ -9,7 +9,7 @@ def calculation_results_to_xls(dict_results, title_results, section, title_exclu
         f.close()
     except FileNotFoundError:
         return
-
+    
     book = xw.Book('Template.xlsx')
     sheet = book.sheets('GIRDER')
     book_new = xw.Book()

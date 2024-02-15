@@ -63,6 +63,73 @@ def open_file():
         open_project(input_data)
 
 
+def import_materals_from_sl():
+    file_types = (("Project file", "*.json"),
+                 ("Any", "*"))
+    file_name = fd.askopenfilename(title="Open file", initialdir="/", filetypes=file_types)
+    if file_name:
+        with open(file_name, 'r') as file:
+            input_data = json.load(file)
+            # print(input_data)
+        import_materials_from_dict_sl(input_data['layers'])
+
+
+def import_materials_from_dict_sl(data_dict):
+    global mat
+    mat = {}
+    for material in data_dict:
+        mat[material] = {}
+        if data_dict[material]['Type'] in s.list_core:
+            mat_type = 'Core'
+        else:
+            mat_type = 'FRP'
+        mat[material] = {
+        "Material": mat_type,
+        "Name": material,
+        "E, N/mm2": data_dict[material]['Eti (N/mm2)'],
+        "G, N/mm2 *": data_dict[material]['G (N/mm2)'],
+        "Poisson ratio *": '0',
+        "Sig c, N/mm2": data_dict[material]['SIGcu (N/mm2)'],
+        "Sig t, N/mm2": data_dict[material]['SIGtu (N/mm2)'],
+        "Tau, N/mm2": data_dict[material]['TAUuin (N/mm2)'],
+        "Thickness, mm": data_dict[material]['Thickness (mm)']
+        }
+    for key in mat:
+        row_number = frame_material.grid_size()[1]
+        add_material_widgets(row_number)
+        for title in title_material:
+            if title == s.material:
+                wd_material[row_number][title].set(mat[key][title])
+            else:
+                wd_material[row_number][title].delete(0, tk.END)
+                wd_material[row_number][title].insert(0, mat[key][title])
+
+
+def import_laminates_from_sl():
+    ask = mb.askyesnocancel('Information', 'Materials have to be loaded previously!')
+    if ask:
+        file_types = (("Project file", "*.json"),
+                     ("Any", "*"))
+        file_name = fd.askopenfilename(title="Open file", initialdir="/", filetypes=file_types)
+        if file_name:
+            with open(file_name, 'r') as file:
+                input_data = json.load(file)
+                # print(input_data)
+            import_laminates_from_dict_sl(input_data['laminates'])
+
+
+def import_laminates_from_dict_sl(data_dict):
+    global lam
+    lam = {}
+    for lam_name in data_dict:
+        lam[lam_name] = {}
+        for ply in data_dict[lam_name]['laminate_structure']:
+            lam[lam_name][ply] = data_dict[lam_name]['laminate_structure'][ply]['Name']
+    for key in lam:
+        lb_lam1.insert(tk.END, key)
+    update_listbox_materials()
+
+
 def open_project(input_data):
     # materials
     global id_item
@@ -1024,7 +1091,7 @@ def import_section():
         # for widget in children:
         #     if widget.winfo_class() != 'Label':
         #         widget.destroy()
-        import_section_dict = section_import.import_section_xls(section_name, s.angle,s.breadth, s.dist_z, s.dist_y)
+        import_section_dict = section_import.import_section_xls(section_name)#, s.angle,s.breadth, s.dist_z, s.dist_y)
         for section_name in import_section_dict:
             for i in range(1, len(import_section_dict[section_name])+1):
                 add_elements()
@@ -1036,6 +1103,14 @@ def import_section():
                 wd_elements[section_name][i][s.dist_z].insert(0, import_section_dict[section_name][i][s.dist_z])
                 wd_elements[section_name][i][s.dist_y].delete(0, tk.END)
                 wd_elements[section_name][i][s.dist_y].insert(0, import_section_dict[section_name][i][s.dist_y])
+                wd_elements[section_name][i][s.y1].delete(0, tk.END)
+                wd_elements[section_name][i][s.y1].insert(0, import_section_dict[section_name][i][s.y1])
+                wd_elements[section_name][i][s.y2].delete(0, tk.END)
+                wd_elements[section_name][i][s.y2].insert(0, import_section_dict[section_name][i][s.y2])
+                wd_elements[section_name][i][s.z1].delete(0, tk.END)
+                wd_elements[section_name][i][s.z1].insert(0, import_section_dict[section_name][i][s.z1])
+                wd_elements[section_name][i][s.z2].delete(0, tk.END)
+                wd_elements[section_name][i][s.z2].insert(0, import_section_dict[section_name][i][s.z2])
 
 
 
@@ -1087,7 +1162,7 @@ if __name__ == '__main__':
     title_elements = [s.name, location, s.material,s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z]
     title_result = [s.name, location, s.material, s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z,s.mod_e,
                       s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, s.cf]
-    title_exclude_result = [s.dist_y]
+    title_exclude_result = [s.y1, s.z1, s.y2, s.z2, s.dist_y]
     title_calculation = [s.name, s.section, s.moment, s.shear, s.zca]
     title_buckling_data = [s.name, s.length_b, s.breadth_b, s.calc_b, s.element_b, s.material, s.end_conditions, s.stress_local]
     title_buckling_result = [s.name, s.stress_crit, s.stress_global, s.stress_local, s.stress_total,s.cf]
@@ -1130,6 +1205,9 @@ if __name__ == '__main__':
     file_menu.add_separator()
     file_menu.add_command(label="Open project", command=open_file)
     file_menu.add_command(label="Save project", command=save_file)
+    file_menu.add_separator()
+    file_menu.add_command(label="Import materials", command=import_materals_from_sl)
+    file_menu.add_command(label="Import laminates", command=import_laminates_from_sl)
     file_menu.add_separator()
     result_menu.add_command(label='Export calculation to Excel', command=export_results)
     result_menu.add_command(label='Export materials data to Excel', command=export_materials)
