@@ -562,6 +562,7 @@ def add_elements():
                 wd_elements[name_section][row_number][title].bind('<Return>',
                                                     lambda e, ns = name_section, i=row_number: change_element_name(e, ns, i))
                 wd_elements[name_section][row_number][s.name].bind('<FocusIn>', lambda e, ns = name_section, i=row_number: current_name_element(e, ns, i))
+                wd_elements[name_section][row_number][s.name].bind('<FocusIn>', lambda e, ns = name_section, i=row_number: change_color_element(e, ns, i), '+')
             elif title in [s.z1, s.y1, s.z2, s.y2]:
                 wd_elements[name_section][row_number][title] = tk.Entry(frame_elements, width=12)
                 wd_elements[name_section][row_number][title].insert(0, f'{0:.3f}')
@@ -595,6 +596,13 @@ def del_elements():
 def current_name_element(event, ns, i):
     global current_name
     current_name = wd_elements[ns][i][s.name].get()
+
+
+def change_color_element (event, ns, i):
+    elem_name = wd_elements[ns][i][s.name].get()
+    for el_name in sections[ns]:
+        canvas_picture.itemconfigure(sections[ns][el_name][s.section_line], fill='green')
+    canvas_picture.itemconfigure(sections[ns][elem_name][s.section_line], fill='red')
 
 
 def change_element_name(event, ns, i):
@@ -1077,9 +1085,9 @@ def show_picture():
                         * math.cos(sections[name_section][elem_name][s.angle]/180*3.1415)) * scale + field
             coord_y2 = (sections[name_section][elem_name][s.dist_y] + sections[name_section][elem_name][s.breadth] / 2
                         * math.cos(sections[name_section][elem_name][s.angle]/180*3.1415)) * scale + field
-            canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
-            canvas_picture.create_line(field, 0, field, offset+field, fill='red', width=1)
-            canvas_picture.create_line(field, offset+field, offset+field, offset+field, fill='red', width=1)
+            sections[name_section][elem_name][s.section_line] = canvas_picture.create_line(coord_y1, coord_z1, coord_y2, coord_z2, fill='green', width=3)
+        canvas_picture.create_line(field, 0, field, offset+field, fill='red', width=1)
+        canvas_picture.create_line(field, offset+field, offset+field, offset+field, fill='red', width=1)
 
 
 def import_section():

@@ -35,6 +35,7 @@ z1 = 'z1, mm'
 z2 = 'z2, mm'
 y2 = 'y2, mm'
 y1 = 'y1, mm'
+section_line = 'line'
 zna = 'zna'
 
 list_material = ['Metal', 'FRP', 'Core']
