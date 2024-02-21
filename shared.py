@@ -1,5 +1,8 @@
 mod_e = 'E, N/mm2'
 mod_g = 'G, N/mm2 *'
+sig_comp = 'Sig c, N/mm2'
+sig_ten = 'Sig t, N/mm2'
+tau = 'Tau, N/mm2'
 poisson = 'Poisson ratio *'
 thickness = 'Thickness, mm'
 name = 'Name'

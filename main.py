@@ -1,3 +1,5 @@
+import laminates_out
+import materials_out
 
 
 def show_about():
@@ -84,15 +86,15 @@ def import_materials_from_dict_sl(data_dict):
         else:
             mat_type = 'FRP'
         mat[material] = {
-        "Material": mat_type,
-        "Name": material,
-        "E, N/mm2": data_dict[material]['Eti (N/mm2)'],
-        "G, N/mm2 *": data_dict[material]['G (N/mm2)'],
-        "Poisson ratio *": '0',
-        "Sig c, N/mm2": data_dict[material]['SIGcu (N/mm2)'],
-        "Sig t, N/mm2": data_dict[material]['SIGtu (N/mm2)'],
-        "Tau, N/mm2": data_dict[material]['TAUuin (N/mm2)'],
-        "Thickness, mm": data_dict[material]['Thickness (mm)']
+        s.material: mat_type,
+        s.name: material,
+        s.mod_e: data_dict[material]['Eti (N/mm2)'],
+        s.mod_g: data_dict[material]['G (N/mm2)'],
+        s.poisson: '0',
+        s.sig_comp: data_dict[material]['SIGcu (N/mm2)'],
+        s.sig_ten: data_dict[material]['SIGtu (N/mm2)'],
+        s.tau: data_dict[material]['TAUuin (N/mm2)'],
+        s.thickness: data_dict[material]['Thickness (mm)']
         }
     for key in mat:
         row_number = frame_material.grid_size()[1]
@@ -803,7 +805,7 @@ def calculate_gs():
                  + results[name_calc][s.section][elem_name][s.height] ** 2 * math.cos(results[name_calc][s.section][elem_name][s.angle]/180*3.1415) **2)
             results[name_calc][s.section][elem_name][eibase] = results[name_calc][s.section][elem_name][efz2] +results[name_calc][s.section][elem_name][ebh3]
             factor_sig_perm = factor_permissible_normal_stress(results[name_calc][s.section][elem_name][location])
-            results[name_calc][s.section][elem_name][sig_perm] = float(mat[results[name_calc][s.section][elem_name][s.material]][sig_comp]) * factor_sig_perm
+            results[name_calc][s.section][elem_name][sig_perm] = float(mat[results[name_calc][s.section][elem_name][s.material]][s.sig_comp]) * factor_sig_perm
 
 
 
@@ -1039,7 +1041,11 @@ def export_results():
 
 
 def export_materials():
-    pass
+    materials_out.materials_data_to_template(mat)
+
+
+def export_laminates():
+    laminates_out.laminates_data_to_template(lam, mat)
 
 
 def is_digit(string):
@@ -1132,21 +1138,6 @@ if __name__ == '__main__':
     import result_out, section_import, calc_buckling, calc_shear_srtess
     import shared as s
 
-
-
-
-
-
-    sig_comp = 'Sig c, N/mm2'
-    sig_ten = 'Sig t, N/mm2'
-    # orientation = 'Orientation'
-
-    # qty = 'Qty'
-
-
-
-
-
     efz = 'EFz, Nmm'
     efz2 = 'EFz2, Nmm2'
     ebh3 = 'Eh3/12, Nmm2'
@@ -1166,7 +1157,7 @@ if __name__ == '__main__':
     ei_na = 'ei_na'
     location = 'Location'
 
-    title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, sig_comp, sig_ten, 'Tau, N/mm2', s.thickness]
+    title_material = [s.material, s.name, s.mod_e,s.mod_g, s.poisson, s.sig_comp, s.sig_ten, s.tau, s.thickness]
     title_elements = [s.name, location, s.material,s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z]
     title_result = [s.name, location, s.material, s.y1, s.z1, s.y2, s.z2, s.height, s.breadth, s.angle, s.dist_y, s.dist_z,s.mod_e,
                       s.area_f, s.ef,  efz, efz2, ebh3, eibase, s.dist_zna, sig_act, sig_perm, s.cf]
@@ -1219,6 +1210,7 @@ if __name__ == '__main__':
     file_menu.add_separator()
     result_menu.add_command(label='Export calculation to Excel', command=export_results)
     result_menu.add_command(label='Export materials data to Excel', command=export_materials)
+    result_menu.add_command(label='Export laminates data to Excel', command=export_laminates)
     file_menu.add_command(label="Exit", command=show_ask_exit)
     main_menu.add_cascade(label="File", menu=file_menu)
     main_menu.add_command(label='Calculate', command=calculate_gs)
