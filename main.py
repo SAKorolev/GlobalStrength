@@ -828,8 +828,8 @@ def calculate_gs():
             results[name_calc][s.section][elem_name][sig_act] = calculations[name_calc][s.moment] / \
                     results[name_calc][s.ei_na] * results[name_calc][s.section][elem_name][s.dist_zna] * \
                                                               results[name_calc][s.section][elem_name][s.mod_e]
-            results[name_calc][s.section][elem_name][s.cf] = results[name_calc][s.section][elem_name][sig_perm] / \
-                                                         results[name_calc][s.section][elem_name][sig_act]
+            results[name_calc][s.section][elem_name][s.cf] = abs(results[name_calc][s.section][elem_name][sig_perm] / \
+                                                         results[name_calc][s.section][elem_name][sig_act])
 
         zca = float(calculations[name_calc][s.zca])
         shear_results = calc_shear_srtess.calc_shear_stress(name_calc, results, mat, zca)
@@ -1037,7 +1037,7 @@ def calculate_buckling():
 
 def export_results():
     result_out.calculation_results_to_xls(results, title_result, s.section, title_exclude_result, sum_f, sum_ef, sum_efz,
-                                          sum_eibase, s.zna, s.ei_na, s.moment, s.shear)
+                                          sum_eibase, s.zna, s.ei_na, s.moment, s.shear, en_project_name.get())
 
 
 def export_materials():

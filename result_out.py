@@ -1,7 +1,7 @@
 import xlwings as xw
 
 def calculation_results_to_xls(dict_results, title_results, section, title_exclude_result, sum_f, sum_ef, sum_efz,
-                               sum_eibase, zna, ei_na, moment, shear):
+                               sum_eibase, zna, ei_na, moment, shear, project):
     if not dict_results:
         return
     try:
@@ -19,6 +19,8 @@ def calculation_results_to_xls(dict_results, title_results, section, title_exclu
         sheet_new.name = name_calc + section
         i = 8
         j = 1
+        sheet_new.range('B4').value = section
+        sheet_new.range('B3').value = project
         for element in dict_results[name_calc][section]:
             for title in title_results:
                 if title not in title_exclude_result:
